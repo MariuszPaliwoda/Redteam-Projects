@@ -1,0 +1,418 @@
+Project 19 - Ćwiczenia z hashami
+
+
+## Zadanie 2:
+*Rekonesans*
+*Enumeracja za pomocą Nmap*
+```
+sudo nmap -sC -sV 10.10.206.121
+sudo nmap -p- 10.10.206.121
+```
+```
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-11 03:07 EDT
+Nmap scan report for 10.10.206.121
+Host is up (0.047s latency).
+Not shown: 997 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 c9:03:aa:aa:ea:a9:f1:f4:09:79:c0:47:41:16:f1:9b (RSA)
+|   256 2e:1d:83:11:65:03:b4:78:e9:6d:94:d1:3b:db:f4:d6 (ECDSA)
+|_  256 91:3d:e4:4f:ab:aa:e2:9e:44:af:d3:57:86:70:bc:39 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Beginning of the end
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 14.41 seconds
+zsh: segmentation fault  sudo nmap -sC -sV 10.10.206.121
+```
+*Otwarte porty*
+```
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+```
+
+*Strona internetowa*
+```
+http://10.10.206.121
+Inspect
+http://10.10.206.121/mansionmain/
+ctrl + U
+<!-- It is in the /diningRoom/ -->
+http://10.10.206.121/diningRoom/
+emblem{fec832623ea498e20bf4fe1821d58727}
+
+Odświerzyć stronę i wprowadzić flagę
+
+Ctrl + U
+<!-- SG93IGFib3V0IHRoZSAvdGVhUm9vbS8= -->
+
+echo "SG93IGFib3V0IHRoZSAvdGVhUm9vbS8=" | base64 -d
+Wynik: How about the /teaRoom/ 
+```
+
+```
+http://10.10.206.121/teaRoom/
+Flaga: lock_pick{037b35e2ff90916a9abf99129c8e1837}
+```
+
+```
+http://10.10.206.121/artRoom/
+Look like a map
+
+Location:  
+/diningRoom/  
+/teaRoom/  
+/artRoom/  --> To juz sprawdzone
+/barRoom/  
+/diningRoom2F/  
+/tigerStatusRoom/  
+/galleryRoom/  
+/studyRoom/  
+/armorRoom/  
+/attic/
+```
+
+```
+http://10.10.206.121/barRoom/
+Ctrl + U
+Hash: NV2XG2LDL5ZWQZLFOR5TGNRSMQ3TEZDFMFTDMNLGGVRGIYZWGNSGCZLDMU3GCMLGGY3TMZL5
+
+Identyfikacja hasha:
+https://gchq.github.io/CyberChef/
+Character type:
+base32
+
+Wprowadzić flagę na stronie:
+Flaga: music_sheet{362d72deaf65f5bdc63daece6a1f676e}
+```
+
+```
+http://10.10.206.121/barRoom357162e3db904857963e6e0b64b96ba7/barRoomHidden.php
+emblem{fec832623ea498e20bf4fe1821d58727}
+Wynik:rebecca
+gold_emblem{58a8c41a9d08b8a4e38d02a4d7ff4843}
+Ctrl + U
+
+```
+
+```
+http://10.10.206.121/diningRoom2F/
+Ctrl + U
+<!-- Lbh trg gur oyhr trz ol chfuvat gur fgnghf gb gur ybjre sybbe. Gur trz vf ba gur qvavatEbbz svefg sybbe. Ivfvg fnccuver.ugzy -->
+https://gchq.github.io/CyberChef/
+Character type:
+ROT13
+Wynik:
+You get the blue gem by pushing the status to the lower floor. The gem is on the diningRoom first floor. Visit sapphire.html
+```
+
+```
+http://10.10.206.121/diningRoom/
+gold_emblem{58a8c41a9d08b8a4e38d02a4d7ff4843}
+Pojawił się hash:
+klfvg ks r wimgnd biz mpuiui ulg fiemok tqod. Xii jvmc tbkg ks tempgf tyi_hvgct_jljinf_kvc
+
+https://www.boxentriq.com/code-breaking/cipher-identifier
+Wynik:
+[Vigenere Cipher]
+
+Hash jest zakodowany w Vigenere Cipher i aby go rozszyfrować, potrzeba tajnego klucza. Można użyć "rebecca" jako tajnego klucza.
+
+Wynik:
+there is a shield key inside the dining room. The html page is called the_great_shield_key
+
+```
+
+```
+http://10.10.206.121/diningRoom/the_great_shield_key.html
+
+shield_key{48a7a9227cd7eb89f0a062590798cbac}
+```
+
+```
+http://10.10.206.121/diningRoom/sapphire.html
+
+blue_jewel{e1d457e96cac640f863ec7bc475d48aa}
+```
+
+```
+http://10.10.206.121/tigerStatusRoom/ 
+
+blue_jewel{e1d457e96cac640f863ec7bc475d48aa}
+
+crest 1:  
+S0pXRkVVS0pKQkxIVVdTWUpFM0VTUlk9
+
+Hint 1: Crest 1 has been encoded twice  
+Hint 2: Crest 1 contanis 14 letters
+```
+
+```
+http://10.10.206.121/galleryRoom/
+
+crest 2:
+GVFWK5KHK5WTGTCILE4DKY3DNN4GQQRTM5AVCTKE
+
+Hint 1: Crest 2 has been encoded twice
+Hint 2: Crest 2 contanis 18 letters
+
+Ctrl + U
+```
+
+```
+http://10.10.206.121/studyRoom/
+
+Ctrl + U
+
+Brak flagi!!!
+```
+
+```
+http://10.10.206.121/armorRoom/
+
+shield_key{48a7a9227cd7eb89f0a062590798cbac}
+
+crest 3:
+MDAxMTAxMTAgMDAxMTAwMTEgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAwMTEgMDAxMDAwMDAgMDAxMTAxMDAgMDExMDAxMDAgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAxMTAgMDAxMDAwMDAgMDAxMTAxMDAgMDAxMTEwMDEgMDAxMDAwMDAgMDAxMTAxMDAgMDAxMTEwMDAgMDAxMDAwMDAgMDAxMTAxMTAgMDExMDAwMTEgMDAxMDAwMDAgMDAxMTAxMTEgMDAxMTAxMTAgMDAxMDAwMDAgMDAxMTAxMTAgMDAxMTAxMDAgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTAxMTAgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTEwMDEgMDAxMDAwMDAgMDAxMTAxMTAgMDExMDAwMDEgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTEwMDEgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTAxMTEgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAxMDEgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAwMDAgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTEwMDAgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAwMTAgMDAxMDAwMDAgMDAxMTAxMTAgMDAxMTEwMDA=
+
+Hint 1: Crest 3 has been encoded three times
+Hint 2: Crest 3 contanis 19 letters
+```
+
+```
+http://10.10.206.121/attic/
+
+shield_key{48a7a9227cd7eb89f0a062590798cbac}
+
+crest 4:
+gSUERauVpvKzRpyPpuYz66JDmRTbJubaoArM6CAQsnVwte6zF9J4GGYyun3k5qM9ma4s
+Hint 1: Crest 2 has been encoded twice
+Hint 2: Crest 2 contanis 17 characters
+```
+*Łamanae kodów herbów*
+[Hash Analyzer - TunnelsUP](https://www.tunnelsup.com/hash-analyzer/)
+
+[From Base32 - CyberChef (gchq.github.io)](https://gchq.github.io/CyberChef/#recipe=From_Base32('A-Z2-7%3D',true)&input=S0pXRkVVS0pKQkxIVVdTWUpFM0VTUlk9)
+
+```
+Crest 1:
+S0pXRkVVS0pKQkxIVVdTWUpFM0VTUlk9
+Character type:
+base64
+
+echo "S0pXRkVVS0pKQkxIVVdTWUpFM0VTUlk9" | base64 -d
+Wynik: KJWFEUKJJBLHUWSYJE3ESRY=
+Character type:
+base32
+
+Właściwy wynik: RlRQIHVzZXI6IG
+```
+
+```
+Crest 2:
+GVFWK5KHK5WTGTCILE4DKY3DNN4GQQRTM5AVCTKE
+Character type:
+base32
+
+Wynik: 5KeuGWm3LHY85cckxhB3gAQMD
+Character type:
+base58
+
+Właściwy wynik: h1bnRlciwgRlRQIHBh
+
+```
+
+```
+Crest 3:
+MDAxMTAxMTAgMDAxMTAwMTEgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAwMTEgMDAxMDAwMDAgMDAxMTAxMDAgMDExMDAxMDAgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAxMTAgMDAxMDAwMDAgMDAxMTAxMDAgMDAxMTEwMDEgMDAxMDAwMDAgMDAxMTAxMDAgMDAxMTEwMDAgMDAxMDAwMDAgMDAxMTAxMTAgMDExMDAwMTEgMDAxMDAwMDAgMDAxMTAxMTEgMDAxMTAxMTAgMDAxMDAwMDAgMDAxMTAxMTAgMDAxMTAxMDAgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTAxMTAgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTEwMDEgMDAxMDAwMDAgMDAxMTAxMTAgMDExMDAwMDEgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTEwMDEgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTAxMTEgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAxMDEgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAwMDAgMDAxMDAwMDAgMDAxMTAxMDEgMDAxMTEwMDAgMDAxMDAwMDAgMDAxMTAwMTEgMDAxMTAwMTAgMDAxMDAwMDAgMDAxMTAxMTAgMDAxMTEwMDA=
+
+Character type:
+Hash 1
+base64
+
+Hash 2
+Binary: 
+Space 
+
+Hash 3
+Hex:
+Auto
+
+Właściwy wybik: c3M6IHlvdV9jYW50X2h
+```
+
+```
+Crest 4
+gSUERauVpvKzRpyPpuYz66JDmRTbJubaoArM6CAQsnVwte6zF9J4GGYyun3k5qM9ma4s
+
+Hash 1- Base58
+Wynik: 70 5a 47 56 66 5a 6d 39 79 5a 58 5a 6c 63 67 3d 3d
+
+Hash 2- Hex
+Właściwy wynik: pZGVfZm9yZXZlcg==
+
+```
+*Połączenie herbów*
+```
+RlRQIHVzZXI6IGh1bnRlciwgRlRQIHBhc3M6IHlvdV9jYW50X2hpZGVfZm9yZXZlcg==
+
+Hash - Base64
+
+Wynik:
+FTP user: hunter, FTP pass: you_cant_hide_forever
+```
+
+
+## Zadanie 3:
+
+
+*Logowanie do FTP*
+```
+ftp 10.10.132.36
+
+user: hunter
+pass: you_cant_hide_forever
+```
+
+*Przeniesienie plików na Kali Linux*
+```
+mget *
+```
+
+*Odczytanie plików*
+```
+gpg helmet_key.txt.gpg 
+```
+Aby uzyskać klucz do kasku, należy wprowadzić tajny klucz lub hasło.
+
+3 kluczowe obrazy 001 002 003 są .jpg i potencjalnie zawierają ukryte w nich informacje. Należy wyodrębnić informacje za pomocą narzędzi steganografii.
+
+*Przegląarka internetowa*
+```
+http://10.10.132.36/hidden_closet
+```
+
+Drzwi są zamknięte i wymagają wprowadzenia flagi kasku. Jest jeszcze kilka katalogów, które potrzebowały flagi kasku.
+
+Narzędzia do steganografii są
+*steghide*
+```
+steghide extract -sf 001-key.jpg
+
+cat key-001.txt
+Hash: cGxhbnQ0Ml9jYW
+
+
+```
+*exiftool*
+```
+exiftool 002-key.jpg
+Hash: 5fYmVfZGVzdHJveV9
+
+exiftool 003-key.jpg
+Hash: 
+```
+Obraz w pliku 003-key.jpg jest kompresowany przez jpeg-recompress. Należy go rozpakować za pomocą polecenia *"binwalk"*. Binwalk to narzędzie do wyodrębniania, które wyodrębnia osadzone systemy plików z obrazów oprogramowania układowego.
+```
+binwalk -e 003-key.jpg
+
+cat key-001.txt
+Hash: 3aXRoX3Zqb2x0
+```
+*Połączenie hashy*
+[CyberChef (gchq.github.io)](https://gchq.github.io/CyberChef/)
+```
+Base64
+cGxhbnQ0Ml9jYW5fYmVfZGVzdHJveV93aXRoX3Zqb2x0
+Wynik: plant42_can_be_destroy_with_vjolt
+```
+*Otworzenie pliku helmet_key.txt.gpg*
+```
+gpg helmet_key.txt.gpg
+password: plant42_can_be_destroy_with_vjolt
+
+Flaga: helmet_key{458493193501d2b94bbab2e727f8db4b}
+```
+
+
+## Zadanie 4:
+*Odblokowanie pozostałych katalogów na stronie*
+```
+/ studyRoom  
+/ hidden_closet
+
+http://10.10.132.36/studyRoom
+helmet_key{458493193501d2b94bbab2e727f8db4b}
+
+Pobrać książkę na Kali Linux i otworzyć:
+tar -xf doom.tar.gz
+
+cat eagle_medal.txt
+SSH user: umbrella_guest
+```
+
+```
+http://10.10.132.36/hidden_closet
+helmet_key{458493193501d2b94bbab2e727f8db4b}
+
+Plik MO disk 1
+Hash zakodowany ROT 13 lub szyfrogram: 
+wpbwbxr wpkzg pltwnhro, txrks_xfqsxrd_bvv_fy_rvmexa_ajk
+```
+[Cipher Identifier (online tool) | Boxentriq](https://www.boxentriq.com/code-breaking/cipher-identifier)
+```
+Szyfrogram został zidentyfikowany jako Szyfr Beauforta.
+Nadal potrzeba tajnego klucza, aby pomyślnie zdekodować hash, tak jak wcześniej, używając "rebecca", jako tajnego klucza do dekodowania skrótu, który dał poświadczenia FTP.
+```
+```
+wolf medal
+SSH password: T_virus_rules
+```
+[From Base64 - CyberChef (gchq.github.io)](https://gchq.github.io/CyberChef/#recipe=From_Base64('A-Za-z0-9%2B/%3D',true,false)&input=Y0d4aGJuUTBNbDlqWVc1ZlltVmZaR1Z6ZEhKdmVWOTNhWFJvWDNacWIyeDA)
+```
+vigenere Decode
+wpbwbxr wpkzg pltwnhro, txrks_xfqsxrd_bvv_fy_rvmexa_ajk
+key: albert
+
+Wynik:
+weasker login password, stars_members_are_my_guinea_pig
+```
+*Logowanie jako Weasker*
+```
+su weasker
+password: stars_members_are_my_guinea_pig
+
+cd~
+cat weasker_note.txt
+```
+## Zadanie 5:
+
+*Logowanie do SSH*
+```
+ssh umbrella_guest@10.10.132.36
+
+SSH user: umbrella_guest
+SSH password: T_virus_rules
+
+cd .jailcell/
+cat chris.txt
+```
+
+**Eskalacja uprawnień
+```
+sudo -l
+sudo su
+cd /root
+cat root.txt
+
+flag: 3c5794a00dc56c35f2bf096571edf3bf
+```
+
+
+
+
